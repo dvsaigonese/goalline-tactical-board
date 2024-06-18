@@ -109,6 +109,12 @@ function drawCircle(circle, isSelected = false) {
   ctx.fillStyle = "white";
   ctx.fillText(circle.text, circle.x, circle.y + 6);
 
+  let fontDetailsSize = 15 * responsiveConstant;
+  ctx.font = `bold ${fontDetailsSize}px Albula`;
+  ctx.textAlign = "center";
+  ctx.fillStyle = "white";
+  ctx.fillText(circle.detailsText, circle.x, circle.y + 26);
+
   ctx.closePath();
   document.querySelector(".circle-count").innerText = circles.length;
 }
@@ -124,12 +130,16 @@ addCircleBtn.addEventListener("click", () => {
   let circleText = document.getElementById("circle-text").value
     ? document.getElementById("circle-text").value
     : "";
+  let circleDetailsText = document.getElementById("circle-details-text").value
+    ? document.getElementById("circle-details-text").value
+    : "";
   const newCircle = {
     x: canvas.width / 2,
     y: canvas.height / 2,
     radius: 20 * responsiveConstant,
     color: circleColor,
     text: circleText,
+    detailsText: circleDetailsText,
   };
   circles.push(newCircle);
   document.getElementById("circle-text").value = "";
@@ -306,8 +316,7 @@ function drawAllTexts() {
 }
 
 function drawText(text, isSelected = false) {
-  let fontSize = 20 * responsiveConstant;
-  ctx.font = `${fontSize}px Albula`;
+  ctx.font = `${text.fontSize}px Albula`;
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
   ctx.fillText(text.text, text.x, text.y);
@@ -317,14 +326,19 @@ function drawText(text, isSelected = false) {
     ctx.beginPath();
     ctx.strokeStyle = "white";
     ctx.lineWidth = 2;
-    ctx.rect(text.x - textWidth / 2, text.y - fontSize, textWidth, fontSize * 2);
+    ctx.rect(
+      text.x - textWidth / 2,
+      text.y - text.fontSize,
+      textWidth,
+      text.fontSize * 2
+    );
     ctx.stroke();
   }
 }
 
 function isInsideText(x, y, text) {
   const textWidth = ctx.measureText(text.text).width;
-  const textHeight = 20 * responsiveConstant; // Chiều cao font ước lượng
+  const textHeight = text.fontSize * responsiveConstant; // Chiều cao font ước lượng
   return (
     x >= text.x - textWidth / 2 &&
     x <= text.x + textWidth / 2 &&
@@ -335,6 +349,9 @@ function isInsideText(x, y, text) {
 
 addTextBtn.addEventListener("click", function () {
   let textInput = document.getElementById("text-input").value;
+  let textFontSize = document.getElementById("text-font-size").value
+    ? document.getElementById("text-font-size").value
+    : 20 * responsiveConstant;
 
   if (textInput == "") {
     alert("Please enter a text");
@@ -343,6 +360,7 @@ addTextBtn.addEventListener("click", function () {
       x: canvas.width / 2,
       y: canvas.height / 2,
       text: textInput,
+      fontSize: textFontSize,
     };
     texts.push(text);
   }
@@ -371,8 +389,8 @@ addTextBtn.addEventListener("click", function () {
 // Canvas
 canvas.addEventListener("click", function (e) {
   const rect = canvas.getBoundingClientRect();
-  const mouseX = (e.clientX - rect.left);
-  const mouseY = (e.clientY - rect.top);
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
 
   // Kiểm tra nếu click xảy ra ngoài circle
   let clickedOutside = true;
@@ -392,8 +410,8 @@ canvas.addEventListener("click", function (e) {
 
 canvas.addEventListener("mousedown", function (e) {
   const rect = canvas.getBoundingClientRect();
-  const mouseX = (e.clientX - rect.left);
-  const mouseY = (e.clientY - rect.top); 
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
 
   // circle
   selectedCircleIndex = -1;
@@ -463,8 +481,8 @@ canvas.addEventListener("mousedown", function (e) {
 
 canvas.addEventListener("mousemove", function (e) {
   const rect = canvas.getBoundingClientRect();
-  const mouseX = (e.clientX - rect.left);
-  const mouseY = (e.clientY - rect.top);
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
 
   // circle
   if (isCircleDragging) {
@@ -553,12 +571,19 @@ function exportCanvas() {
     exportCtx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
     exportCtx.fillStyle = circle.color;
     exportCtx.fill();
+
     let fontSize = 20 * responsiveConstant;
     exportCtx.font = `bold ${fontSize}px Albula`;
     exportCtx.textAlign = "center";
     exportCtx.fillStyle = "white";
     exportCtx.fillText(circle.text, circle.x, circle.y + 6);
     exportCtx.closePath();
+
+    let fontDetailsSize = 15 * responsiveConstant;
+    exportCtx.font = `bold ${fontDetailsSize}px Albula`;
+    exportCtx.textAlign = "center";
+    exportCtx.fillStyle = "white";
+    exportCtx.fillText(circle.detailsText, circle.x, circle.y + 26);
   });
 
   arrows.forEach((arrow) => {
