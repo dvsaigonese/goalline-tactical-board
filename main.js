@@ -8,56 +8,50 @@ halfPitch.src = "assets/img/half_pitch.png";
 var screenWidth = window.innerWidth;
 var responsiveConstant;
 console.log(screenWidth);
-//900/630
 
 window.onload = function () {
-  document.body.style.transform = "scale(0.9)";
+  //document.body.style.transform = "scale(scaleConstant)";
   drawCanvas();
 };
 
 document.getElementById("pitch-type").addEventListener("change", drawCanvas);
 
 function drawCanvas() {
-  let ptichType = document.getElementById("pitch-type").value;
+  let pitchType = document.getElementById("pitch-type").value;
   if (screenWidth < 768) {
     alert("Nghèo quá v, mua máy màn hình to lên rồi hẵng xài nhé!");
   } else if (screenWidth >= 768 && screenWidth < 1024) {
-    if (ptichType == "horizontal") {
-      canvas.width = 630;
-      canvas.height = 441;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(horizontalPitch, 0, 0, canvas.width, canvas.height);
-    } else if (ptichType == "half") {
-      canvas.width = 520;
-      canvas.height = 442;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(halfPitch, 0, 0, canvas.width, canvas.height);
+    if (pitchType == "horizontal") {
+      canvas.width = 567;
+      canvas.height = 397;
+    } else if (pitchType == "half") {
+      canvas.width = 468;
+      canvas.height = 398;
     }
-    responsiveConstant = 0.7;
+    responsiveConstant = 0.63;
   } else if (screenWidth >= 1024 && screenWidth < 1440) {
-    if (ptichType == "horizontal") {
-      canvas.width = 760;
-      canvas.height = 530;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(horizontalPitch, 0, 0, canvas.width, canvas.height);
-    } else if (ptichType == "half") {
-      canvas.width = 630;
-      canvas.height = 535;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(halfPitch, 0, 0, canvas.width, canvas.height);
+    if (pitchType == "horizontal") {
+      canvas.width = 684;
+      canvas.height = 477;
+    } else if (pitchType == "half") {
+      canvas.width = 567;
+      canvas.height = 482;
     }
-    responsiveConstant = 0.85;
+    responsiveConstant = 0.765;
   } else if (screenWidth >= 1440) {
-    if (ptichType == "horizontal") {
-      canvas.width = 900;
-      canvas.height = 630;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(horizontalPitch, 0, 0, canvas.width, canvas.height);
-    } else if (ptichType == "half") {
-      canvas.width = 742;
-      canvas.height = 630;
+    if (pitchType == "horizontal") {
+      canvas.width = 810;
+      canvas.height = 567;
+    } else if (pitchType == "half") {
+      canvas.width = 668;
+      canvas.height = 567;
     }
-    responsiveConstant = 1;
+    responsiveConstant = 0.9;
+  }
+  if (pitchType == "horizontal") {
+    ctx.drawImage(horizontalPitch, 0, 0, canvas.width, canvas.height);
+  } else if (pitchType == "half") {
+    ctx.drawImage(halfPitch, 0, 0, canvas.width, canvas.height);
   }
   drawAllCircles();
   drawAllArrows();
@@ -80,6 +74,10 @@ function drawCanvas() {
 //
 //
 //
+let selectedCircleIndex;
+let selectedArrowIndex;
+let selectedTextIndex;
+
 //Circle
 
 function drawAllCircles() {
@@ -315,13 +313,17 @@ function drawText(text, isSelected = false) {
   ctx.fillText(text.text, text.x, text.y);
 
   if (isSelected) {
-    ctx.strokeStyle = "black";
-    ctx.strokeText(text.text, text.x, text.y);
+    let textWidth = ctx.measureText(text.text).width;
+    ctx.beginPath();
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.rect(text.x - textWidth / 2, text.y - fontSize, textWidth, fontSize * 2);
+    ctx.stroke();
   }
 }
 
 function isInsideText(x, y, text) {
-  const textWidth = ctx.measureText(text).width;
+  const textWidth = ctx.measureText(text.text).width;
   const textHeight = 20 * responsiveConstant; // Chiều cao font ước lượng
   return (
     x >= text.x - textWidth / 2 &&
@@ -367,11 +369,10 @@ addTextBtn.addEventListener("click", function () {
 //
 //
 // Canvas
-
-canvas.addEventListener("click", (e) => {
+canvas.addEventListener("click", function (e) {
   const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
+  const mouseX = (e.clientX - rect.left);
+  const mouseY = (e.clientY - rect.top);
 
   // Kiểm tra nếu click xảy ra ngoài circle
   let clickedOutside = true;
@@ -389,13 +390,10 @@ canvas.addEventListener("click", (e) => {
   }
 });
 
-let selectedCircleIndex = -1;
-let selectedArrowIndex = -1;
-let selectedTextIndex = -1;
-canvas.addEventListener("mousedown", (e) => {
+canvas.addEventListener("mousedown", function (e) {
   const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
+  const mouseX = (e.clientX - rect.left);
+  const mouseY = (e.clientY - rect.top); 
 
   // circle
   selectedCircleIndex = -1;
@@ -463,10 +461,10 @@ canvas.addEventListener("mousedown", (e) => {
   }
 });
 
-canvas.addEventListener("mousemove", (e) => {
+canvas.addEventListener("mousemove", function (e) {
   const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
+  const mouseX = (e.clientX - rect.left);
+  const mouseY = (e.clientY - rect.top);
 
   // circle
   if (isCircleDragging) {
@@ -512,7 +510,7 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
-canvas.addEventListener("mouseup", () => {
+canvas.addEventListener("mouseup", function () {
   draggingArrow = null;
   draggingArrowPoint = null;
   isCircleDragging = false;
@@ -520,7 +518,7 @@ canvas.addEventListener("mouseup", () => {
   draggingCircleIndex = -1;
 });
 
-canvas.addEventListener("mouseout", () => {
+canvas.addEventListener("mouseout", function () {
   draggingArrow = null;
   draggingArrowPoint = null;
   isCircleDragging = false;
@@ -543,10 +541,10 @@ function exportCanvas() {
   exportCtx.scale(scale, scale);
 
   // Draw everything onto the temporary canvas
-  let ptichType = document.getElementById("pitch-type").value;
-  if (ptichType == "horizontal") {
+  let pitchType = document.getElementById("pitch-type").value;
+  if (pitchType == "horizontal") {
     exportCtx.drawImage(horizontalPitch, 0, 0, canvas.width, canvas.height);
-  } else if (ptichType == "half") {
+  } else if (pitchType == "half") {
     exportCtx.drawImage(halfPitch, 0, 0, canvas.width, canvas.height);
   }
 
