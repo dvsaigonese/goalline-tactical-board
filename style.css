@@ -1,0 +1,103 @@
+/* CSS Reset */
+@font-face {
+  font-family: "Albula";
+  src: url("assets/fonts/AlbulaProBold.otf") format("truetype");
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  font-family: "Albula", Arial, sans-serif; /* Optional: Set a default font */
+  background-color: #000000;
+}
+
+body {
+  line-height: 1.6; /* Optional: Set a default line height */
+  transform-origin: top center; 
+  transform: scale(1); 
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+canvas {
+  border: 1px solid white;
+}
+.grid-container {
+  padding-right: 15px;
+  width: 100%;
+  height: auto;
+  background: #000000;
+  align-items: center;
+  color: white;
+  justify-content: flex-end;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+.grid-item {
+  align-self: center; /* Căn giữa theo chiều dọc */
+  justify-self: center; /* Căn giữa theo chiều ngang */
+  padding: 10px;
+  text-align: center;
+}
+.grid-item .pitch {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+.circle {
+  display: inline-block;
+  line-height: 0px;
+  border-radius: 50%;
+  border: 1px solid white;
+  color: white;
+}
+.count {
+  display: inline-block;
+  padding-top: 50%;
+  padding-bottom: 50%;
+  margin-left: 8px;
+  margin-right: 8px;
+}
+img {
+  border: 1px solid #ffffff;
+  height: 80%;
+}
+
+@media screen and (max-width: 768px) {
+  body {
+    -webkit-overflow-scrolling: touch; /* Safari 3.1+ */
+    -moz-overflow-scrolling: touch; /* Firefox 2+ */
+    -ms-overflow-scrolling: touch; /* IE 10+ */
+    s: touch; /* Standard syntax */
+    -webkit-user-select: none; /* Safari 3.1+ */
+    -moz-user-select: none; /* Firefox 2+ */
+    -ms-user-select: none; /* IE 10+ */
+    user-select: none; /* Standard syntax */
+  }
+}
