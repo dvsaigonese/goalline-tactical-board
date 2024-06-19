@@ -23,8 +23,11 @@ function drawCanvas() {
   if (screenWidth < 768) {
     alert("Nghèo quá v, mua máy màn hình to lên rồi hẵng xài nhé!");
   } else if (screenWidth >= 768 && screenWidth < 1024) {
-    if (pitchType == "horizontal" || pitchType == "vertical") {
+    if (pitchType == "horizontal") {
       canvas.width = 567;
+      canvas.height = 398;
+    } else if (pitchType == "vertical") {
+      canvas.width = 622;
       canvas.height = 398;
     } else if (pitchType == "half") {
       canvas.width = 468;
@@ -44,8 +47,11 @@ function drawCanvas() {
     }
     responsiveConstant = 0.765;
   } else if (screenWidth >= 1440) {
-    if (pitchType == "horizontal" || pitchType == "vertical") {
+    if (pitchType == "horizontal") {
       canvas.width = 810;
+      canvas.height = 567;
+    } else if (pitchType == "vertical") {
+      canvas.width = 888;
       canvas.height = 567;
     } else if (pitchType == "half") {
       canvas.width = 668;
@@ -343,7 +349,7 @@ function drawText(text, isSelected = false) {
     ctx.beginPath();
     ctx.moveTo(text.x - textWidth / 2, text.y + 2);
     ctx.lineTo(text.x + textWidth / 2, text.y + 2);
-    ctx.strokeStyle = 'white';
+    ctx.strokeStyle = "white";
     ctx.lineWidth = 3 * responsiveConstant;
     ctx.stroke();
   }
