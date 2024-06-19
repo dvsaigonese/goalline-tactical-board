@@ -690,10 +690,15 @@ function exportCanvas() {
   //text
   texts.forEach((text) => {
     let fontSize = 20 * responsiveConstant;
+    exportCtx.save();
     exportCtx.font = `${fontSize}px Albula`;
     exportCtx.fillStyle = "white";
     exportCtx.textAlign = "center";
-    exportCtx.fillText(text.text, text.x, text.y);
+
+    exportCtx.translate(text.x, text.y);
+    exportCtx.rotate(text.rotate * (Math.PI / 180));
+    exportCtx.fillText(text.text, 0, 0);
+    exportCtx.restore();
   });
 
   // Convert the temporary canvas to a data URL
