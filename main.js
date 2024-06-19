@@ -12,7 +12,9 @@ var responsiveConstant;
 console.log(screenWidth);
 
 window.onload = function () {
-  //document.body.style.transform = "scale(scaleConstant)";
+  var today = new Date();
+  var currentYear = today.getFullYear();
+  document.querySelector(".copyright").innerHTML = `© ${currentYear} Goal-Line`;
   drawCanvas();
 };
 
