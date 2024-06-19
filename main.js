@@ -2,6 +2,8 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const horizontalPitch = new Image();
 horizontalPitch.src = "assets/img/horizontal_pitch.png";
+const verticalPitch = new Image();
+verticalPitch.src = "assets/img/vertical_pitch.png";
 const halfPitch = new Image();
 halfPitch.src = "assets/img/half_pitch.png";
 
@@ -21,9 +23,9 @@ function drawCanvas() {
   if (screenWidth < 768) {
     alert("Nghèo quá v, mua máy màn hình to lên rồi hẵng xài nhé!");
   } else if (screenWidth >= 768 && screenWidth < 1024) {
-    if (pitchType == "horizontal") {
+    if (pitchType == "horizontal" || pitchType == "vertical") {
       canvas.width = 567;
-      canvas.height = 397;
+      canvas.height = 398;
     } else if (pitchType == "half") {
       canvas.width = 468;
       canvas.height = 398;
@@ -32,14 +34,17 @@ function drawCanvas() {
   } else if (screenWidth >= 1024 && screenWidth < 1440) {
     if (pitchType == "horizontal") {
       canvas.width = 684;
-      canvas.height = 477;
+      canvas.height = 479;
+    } else if (pitchType == "vertical") {
+      canvas.width = 750;
+      canvas.height = 479;
     } else if (pitchType == "half") {
       canvas.width = 567;
-      canvas.height = 482;
+      canvas.height = 479;
     }
     responsiveConstant = 0.765;
   } else if (screenWidth >= 1440) {
-    if (pitchType == "horizontal") {
+    if (pitchType == "horizontal" || pitchType == "vertical") {
       canvas.width = 810;
       canvas.height = 567;
     } else if (pitchType == "half") {
@@ -52,6 +57,8 @@ function drawCanvas() {
     ctx.drawImage(horizontalPitch, 0, 0, canvas.width, canvas.height);
   } else if (pitchType == "half") {
     ctx.drawImage(halfPitch, 0, 0, canvas.width, canvas.height);
+  } else if (pitchType == "vertical") {
+    ctx.drawImage(verticalPitch, 0, 0, canvas.width, canvas.height);
   }
   drawAllCircles();
   drawAllArrows();
@@ -92,6 +99,7 @@ let isCircleDragging = false;
 let draggingCircleIndex = -1;
 
 function drawCircle(circle, isSelected = false) {
+  ctx.save();
   ctx.beginPath();
   ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
   ctx.fillStyle = circle.color;
@@ -116,6 +124,7 @@ function drawCircle(circle, isSelected = false) {
   ctx.fillText(circle.detailsText, circle.x, circle.y + 26);
 
   ctx.closePath();
+  ctx.restore();
   document.querySelector(".circle-count").innerText = circles.length;
 }
 
@@ -143,6 +152,7 @@ addCircleBtn.addEventListener("click", () => {
   };
   circles.push(newCircle);
   document.getElementById("circle-text").value = "";
+  document.getElementById("circle-details-text").value = "";
   circles.forEach((circle, index) =>
     drawCircle(circle, index === selectedCircleIndex)
   );
@@ -186,6 +196,7 @@ function drawArrow(
   var headlen = 13 * responsiveConstant; // Chiều dài đầu mũi tên
   var angle = Math.atan2(toY - fromY, toX - fromX);
 
+  ctx.save();
   // Vẽ thân mũi tên
   ctx.beginPath();
   if (type == "dash") {
@@ -232,6 +243,7 @@ function drawArrow(
     ctx.fillStyle = color;
     ctx.fill();
   }
+  ctx.restore();
   document.querySelector(".arrow-count").innerText = arrows.length;
 }
 
@@ -310,35 +322,36 @@ addArrowBtn.addEventListener("click", function () {
 const addTextBtn = document.getElementById("text-btn");
 let texts = [];
 let isTextDragging = false;
+let isTextRotating = false;
 
 function drawAllTexts() {
   texts.forEach((text, index) => drawText(text, index === selectedTextIndex));
 }
 
 function drawText(text, isSelected = false) {
+  ctx.save();
+  ctx.translate(text.x, text.y);
+  ctx.rotate(text.rotate * (Math.PI / 180));
   ctx.font = `${text.fontSize}px Albula`;
   ctx.fillStyle = "white";
   ctx.textAlign = "center";
-  ctx.fillText(text.text, text.x, text.y);
+  ctx.fillText(text.text, 0, 0);
+  ctx.restore();
 
   if (isSelected) {
     let textWidth = ctx.measureText(text.text).width;
     ctx.beginPath();
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    ctx.rect(
-      text.x - textWidth / 2,
-      text.y - text.fontSize,
-      textWidth,
-      text.fontSize * 2
-    );
+    ctx.moveTo(text.x - textWidth / 2, text.y + 2);
+    ctx.lineTo(text.x + textWidth / 2, text.y + 2);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 3 * responsiveConstant;
     ctx.stroke();
   }
 }
 
 function isInsideText(x, y, text) {
   const textWidth = ctx.measureText(text.text).width;
-  const textHeight = text.fontSize * responsiveConstant; // Chiều cao font ước lượng
+  const textHeight = text.fontSize; // Chiều cao font ước lượng
   return (
     x >= text.x - textWidth / 2 &&
     x <= text.x + textWidth / 2 &&
@@ -346,6 +359,46 @@ function isInsideText(x, y, text) {
     y <= text.y + textHeight / 2
   );
 }
+
+//rotate when press Shift + roll mouse wheel
+let isShiftPressed = false;
+let isRotateTextKeyUp = false;
+let rotateValue = 0;
+
+function handleKeyDown(event) {
+  if (event.key === "Shift") {
+    isShiftPressed = true;
+  }
+}
+
+function handleKeyUp(event) {
+  if (event.key === "Shift") {
+    isShiftPressed = false;
+  }
+}
+
+function handleWheelEvent(event) {
+  if (isShiftPressed) {
+    if (event.deltaY > 0) {
+      rotateValue = rotateValue + 2;
+    } else if (event.deltaY < 0) {
+      rotateValue = rotateValue - 2;
+    }
+    if (selectedTextIndex != -1) {
+      texts[selectedTextIndex].rotate = rotateValue;
+    }
+    drawCanvas();
+  } else {
+    isRotateTextKeyUp = false;
+  }
+}
+
+window.addEventListener("keydown", handleKeyDown);
+window.addEventListener("keyup", handleKeyUp);
+
+window.addEventListener("wheel", handleWheelEvent);
+
+/////////////////////////
 
 addTextBtn.addEventListener("click", function () {
   let textInput = document.getElementById("text-input").value;
@@ -360,6 +413,7 @@ addTextBtn.addEventListener("click", function () {
       x: canvas.width / 2,
       y: canvas.height / 2,
       text: textInput,
+      rotate: 0,
       fontSize: textFontSize,
     };
     texts.push(text);
@@ -564,6 +618,8 @@ function exportCanvas() {
     exportCtx.drawImage(horizontalPitch, 0, 0, canvas.width, canvas.height);
   } else if (pitchType == "half") {
     exportCtx.drawImage(halfPitch, 0, 0, canvas.width, canvas.height);
+  } else if (pitchType == "vertical") {
+    exportCtx.drawImage(verticalPitch, 0, 0, canvas.width, canvas.height);
   }
 
   circles.forEach((circle) => {
