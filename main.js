@@ -43,7 +43,7 @@ function drawCanvas(isFirstLoad = false) {
   if (isFirstLoad == false) {
     pitchType = document.getElementById("pitch-type").value;
   } else {
-    pitchType = canvasObj[0];
+    pitchType = canvasObj[0] ? canvasObj[0]: document.getElementById("pitch-type").value;
   }
   if (screenWidth < 768) {
     alert("Nghèo quá v, mua máy màn hình to lên rồi hẵng xài nhé!");
