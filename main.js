@@ -6,22 +6,45 @@ const verticalPitch = new Image();
 verticalPitch.src = "assets/img/vertical_pitch.png";
 const halfPitch = new Image();
 halfPitch.src = "assets/img/half_pitch.png";
+const ballImg = new Image();
+ballImg.src = 'assets/img/ball.png';
 
 var screenWidth = window.innerWidth;
 var responsiveConstant;
 console.log(screenWidth);
 
+//define to save canvas in local storage when closing window
+let canvasObj = JSON.parse(localStorage.getItem('canvasObj'));
+let circleObj = JSON.parse(localStorage.getItem('circleObj'));
+let arrowObj = JSON.parse(localStorage.getItem('arrowObj'));
+let textObj = JSON.parse(localStorage.getItem('textObj'));
+
+document.getElementById("pitch-type").value = JSON.parse(localStorage.getItem('canvasObj')) ? JSON.parse(localStorage.getItem('canvasObj')) : document.getElementById("pitch-type").value;
+let circles = JSON.parse(localStorage.getItem('circleObj')) ? JSON.parse(localStorage.getItem('circleObj')) : [];
+let arrows = JSON.parse(localStorage.getItem('arrowObj')) ? JSON.parse(localStorage.getItem('arrowObj')) : [];
+let texts = JSON.parse(localStorage.getItem('textObj')) ? JSON.parse(localStorage.getItem('textObj')) : [];
+
 window.onload = function () {
   var today = new Date();
   var currentYear = today.getFullYear();
   document.querySelector(".copyright").innerHTML = `© ${currentYear} Goal-Line`;
-  drawCanvas();
+  drawCanvas(true);
 };
 
-document.getElementById("pitch-type").addEventListener("change", drawCanvas);
+document.getElementById("pitch-type").addEventListener("change", () => {
+  canvasObj = [];
+  canvasObj.push(document.getElementById("pitch-type").value);
+  localStorage.setItem('canvasObj', JSON.stringify(canvasObj));
+  drawCanvas();
+});
 
-function drawCanvas() {
-  let pitchType = document.getElementById("pitch-type").value;
+function drawCanvas(isFirstLoad = false) {
+  let pitchType;
+  if (isFirstLoad == false) {
+    pitchType = document.getElementById("pitch-type").value;
+  } else {
+    pitchType = canvasObj[0];
+  }
   if (screenWidth < 768) {
     alert("Nghèo quá v, mua máy màn hình to lên rồi hẵng xài nhé!");
   } else if (screenWidth >= 768 && screenWidth < 1024) {
@@ -68,9 +91,9 @@ function drawCanvas() {
   } else if (pitchType == "vertical") {
     ctx.drawImage(verticalPitch, 0, 0, canvas.width, canvas.height);
   }
-  drawAllCircles();
-  drawAllArrows();
-  drawAllTexts();
+  drawAllCircles(isFirstLoad);
+  drawAllArrows(isFirstLoad);
+  drawAllTexts(isFirstLoad);
 }
 
 //
@@ -95,23 +118,39 @@ let selectedTextIndex;
 
 //Circle
 
-function drawAllCircles() {
-  circles.forEach((circle, index) =>
+function drawAllCircles(isFirstLoad = false) {
+  if (isFirstLoad == false) {
+    circleObj = [];
+  }
+  circles.forEach((circle, index) => {
+    if (isFirstLoad == false) {
+      circleObj.push(circle);
+    }
     drawCircle(circle, index === selectedCircleIndex)
-  );
+  });
+  console.log(circleObj);
+  localStorage.setItem('circleObj', JSON.stringify(circleObj));
 }
 
 const addCircleBtn = document.getElementById("circle-btn");
-let circles = [];
 let isCircleDragging = false;
 let draggingCircleIndex = -1;
 
 function drawCircle(circle, isSelected = false) {
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
-  ctx.fillStyle = circle.color;
-  ctx.fill();
+  if(circle.color == 'ball') {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(circle.x, circle.y, circle.radius/2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(ballImg, circle.x - circle.radius, circle.y - circle.radius, circle.radius * 2, circle.radius * 2);
+  } else {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+    ctx.fillStyle = circle.color;
+    ctx.fill();
+  }
 
   if (isSelected) {
     ctx.lineWidth = 3 * responsiveConstant;
@@ -184,7 +223,6 @@ addCircleBtn.addEventListener("click", () => {
 // Arrow
 const addArrowBtn = document.getElementById("arrow-btn");
 
-let arrows = [];
 let draggingArrow = null;
 let draggingArrowPoint = null;
 let dragOffsetX = 0;
@@ -255,8 +293,14 @@ function drawArrow(
   document.querySelector(".arrow-count").innerText = arrows.length;
 }
 
-function drawAllArrows() {
+function drawAllArrows(isFirstLoad = false) {
+  if (isFirstLoad == false) {
+    arrowObj = [];
+  }
   arrows.forEach((arrow, index) => {
+    if (isFirstLoad == false) {
+      arrowObj.push(arrow);
+    }
     drawArrow(
       ctx,
       arrow.fromX,
@@ -269,6 +313,7 @@ function drawAllArrows() {
       index === selectedArrowIndex
     );
   });
+  localStorage.setItem('arrowObj', JSON.stringify(arrowObj));
 }
 
 function isMouseOnArrowPoint(x, y, point) {
@@ -328,12 +373,20 @@ addArrowBtn.addEventListener("click", function () {
 //Text
 
 const addTextBtn = document.getElementById("text-btn");
-let texts = [];
 let isTextDragging = false;
 let isTextRotating = false;
 
-function drawAllTexts() {
-  texts.forEach((text, index) => drawText(text, index === selectedTextIndex));
+function drawAllTexts(isFirstLoad = false) {
+  if (isFirstLoad == false) {
+    textObj = [];
+  }
+  texts.forEach((text, index) => {
+    if (isFirstLoad == false) {
+      textObj.push(text);
+    }
+    drawText(text, index === selectedTextIndex)}
+  );
+  localStorage.setItem('textObj', JSON.stringify(textObj));
 }
 
 function drawText(text, isSelected = false) {
@@ -631,10 +684,22 @@ function exportCanvas() {
   }
 
   circles.forEach((circle) => {
-    exportCtx.beginPath();
-    exportCtx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
-    exportCtx.fillStyle = circle.color;
-    exportCtx.fill();
+    if(circle.color == 'ball') {
+      exportCtx.save();
+      exportCtx.beginPath();
+      exportCtx.arc(circle.x, circle.y, circle.radius/2, 0, Math.PI * 2);
+      exportCtx.closePath();
+      exportCtx.clip();
+      exportCtx.drawImage(ballImg, circle.x - circle.radius, circle.y - circle.radius, circle.radius * 2, circle.radius * 2);
+      exportCtx.restore();
+    } else if (circle.color != 'ball') {
+      exportCtx.save();
+      exportCtx.beginPath();
+      exportCtx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+      exportCtx.fillStyle = circle.color;
+      exportCtx.fill();
+      exportCtx.restore();
+    }
 
     let fontSize = 20 * responsiveConstant;
     exportCtx.font = `bold ${fontSize}px Albula`;
@@ -691,7 +756,7 @@ function exportCanvas() {
 
   //text
   texts.forEach((text) => {
-    let fontSize = 20 * responsiveConstant;
+    let fontSize = text.fontSize * responsiveConstant;
     exportCtx.save();
     exportCtx.font = `${fontSize}px Albula`;
     exportCtx.fillStyle = "white";
