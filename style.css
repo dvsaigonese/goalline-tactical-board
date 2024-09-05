@@ -16,6 +16,7 @@ body {
   width: 100%;
   font-family: "Albula", Arial, sans-serif; /* Optional: Set a default font */
   background-color: #000000;
+  color: #ffffff;
 }
 
 body {
@@ -46,29 +47,6 @@ table {
 }
 canvas {
   border: 1px solid white;
-}
-.grid-container {
-  padding-right: 15px;
-  width: 100%;
-  height: auto;
-  background: #000000;
-  align-items: center;
-  color: white;
-  justify-content: flex-end;
-  overflow: hidden;
-  position: relative;
-  user-select: none;
-}
-.grid-item {
-  align-self: center; /* Căn giữa theo chiều dọc */
-  justify-self: center; /* Căn giữa theo chiều ngang */
-  padding: 10px;
-  text-align: center;
-}
-.grid-item .pitch {
-  width: 100%;
-  height: 100%;
-  overflow: auto;
 }
 .circle {
   display: inline-block;

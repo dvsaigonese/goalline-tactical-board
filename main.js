@@ -7,22 +7,36 @@ verticalPitch.src = "assets/img/vertical_pitch.png";
 const halfPitch = new Image();
 halfPitch.src = "assets/img/half_pitch.png";
 const ballImg = new Image();
-ballImg.src = 'assets/img/ball.png';
+ballImg.src = "assets/img/ball.png";
 
 var screenWidth = window.innerWidth;
 var responsiveConstant;
 console.log(screenWidth);
 
 //define to save canvas in local storage when closing window
-let canvasObj = JSON.parse(localStorage.getItem('canvasObj'));
-let circleObj = JSON.parse(localStorage.getItem('circleObj'));
-let arrowObj = JSON.parse(localStorage.getItem('arrowObj'));
-let textObj = JSON.parse(localStorage.getItem('textObj'));
+let canvasObj = JSON.parse(localStorage.getItem("canvasObj"));
+let circleObj = JSON.parse(localStorage.getItem("circleObj"));
+let arrowObj = JSON.parse(localStorage.getItem("arrowObj"));
+let textObj = JSON.parse(localStorage.getItem("textObj"));
+let polygonObj = JSON.parse(localStorage.getItem("polygonObj"));
 
-document.getElementById("pitch-type").value = JSON.parse(localStorage.getItem('canvasObj')) ? JSON.parse(localStorage.getItem('canvasObj')) : document.getElementById("pitch-type").value;
-let circles = JSON.parse(localStorage.getItem('circleObj')) ? JSON.parse(localStorage.getItem('circleObj')) : [];
-let arrows = JSON.parse(localStorage.getItem('arrowObj')) ? JSON.parse(localStorage.getItem('arrowObj')) : [];
-let texts = JSON.parse(localStorage.getItem('textObj')) ? JSON.parse(localStorage.getItem('textObj')) : [];
+document.getElementById("pitch-type").value = JSON.parse(
+  localStorage.getItem("canvasObj")
+)
+  ? JSON.parse(localStorage.getItem("canvasObj"))
+  : document.getElementById("pitch-type").value;
+let circles = JSON.parse(localStorage.getItem("circleObj"))
+  ? JSON.parse(localStorage.getItem("circleObj"))
+  : [];
+let arrows = JSON.parse(localStorage.getItem("arrowObj"))
+  ? JSON.parse(localStorage.getItem("arrowObj"))
+  : [];
+let texts = JSON.parse(localStorage.getItem("textObj"))
+  ? JSON.parse(localStorage.getItem("textObj"))
+  : [];
+let polygons = JSON.parse(localStorage.getItem("polygonObj"))
+  ? JSON.parse(localStorage.getItem("polygonObj"))
+  : [];
 
 window.onload = function () {
   var today = new Date();
@@ -34,55 +48,62 @@ window.onload = function () {
 document.getElementById("pitch-type").addEventListener("change", () => {
   canvasObj = [];
   canvasObj.push(document.getElementById("pitch-type").value);
-  localStorage.setItem('canvasObj', JSON.stringify(canvasObj));
+  localStorage.setItem("canvasObj", JSON.stringify(canvasObj));
   drawCanvas();
 });
 
 function drawCanvas(isFirstLoad = false) {
   let pitchType;
+  let defaultWidth = 900;
+  let defaultHeight = 600;
+  let halfWidthDevideByHorizontalWidth = 0.82;
   if (isFirstLoad == false) {
     pitchType = document.getElementById("pitch-type").value;
   } else {
-    pitchType = canvasObj[0] ? canvasObj[0]: document.getElementById("pitch-type").value;
+    pitchType = canvasObj[0]
+      ? canvasObj[0]
+      : document.getElementById("pitch-type").value;
   }
   if (screenWidth < 768) {
     alert("Nghèo quá v, mua máy màn hình to lên rồi hẵng xài nhé!");
   } else if (screenWidth >= 768 && screenWidth < 1024) {
+    responsiveConstant = 0.82;
     if (pitchType == "horizontal") {
-      canvas.width = 567;
-      canvas.height = 398;
+      canvas.width = defaultWidth * responsiveConstant;
+      canvas.height = defaultHeight * responsiveConstant;
     } else if (pitchType == "vertical") {
-      canvas.width = 622;
-      canvas.height = 398;
+      canvas.width = defaultWidth * responsiveConstant;
+      canvas.height = defaultHeight * responsiveConstant;
     } else if (pitchType == "half") {
-      canvas.width = 468;
-      canvas.height = 398;
+      canvas.width =
+        defaultWidth * responsiveConstant * halfWidthDevideByHorizontalWidth;
+      canvas.height = defaultHeight * responsiveConstant;
     }
-    responsiveConstant = 0.63;
   } else if (screenWidth >= 1024 && screenWidth < 1440) {
+    responsiveConstant = 1;
     if (pitchType == "horizontal") {
-      canvas.width = 684;
-      canvas.height = 479;
+      canvas.width = defaultWidth;
+      canvas.height = defaultHeight;
     } else if (pitchType == "vertical") {
-      canvas.width = 750;
-      canvas.height = 479;
+      canvas.width = defaultWidth;
+      canvas.height = defaultHeight;
     } else if (pitchType == "half") {
-      canvas.width = 567;
-      canvas.height = 479;
+      canvas.width = defaultWidth * halfWidthDevideByHorizontalWidth;
+      canvas.height = defaultHeight;
     }
-    responsiveConstant = 0.765;
   } else if (screenWidth >= 1440) {
+    responsiveConstant = 1.18;
     if (pitchType == "horizontal") {
-      canvas.width = 810;
-      canvas.height = 567;
+      canvas.width = defaultWidth * responsiveConstant;
+      canvas.height = defaultHeight * responsiveConstant;
     } else if (pitchType == "vertical") {
-      canvas.width = 888;
-      canvas.height = 567;
+      canvas.width = defaultWidth * responsiveConstant;
+      canvas.height = defaultHeight * responsiveConstant;
     } else if (pitchType == "half") {
-      canvas.width = 668;
-      canvas.height = 567;
+      canvas.width =
+        defaultWidth * responsiveConstant * halfWidthDevideByHorizontalWidth;
+      canvas.height = defaultHeight * responsiveConstant;
     }
-    responsiveConstant = 0.9;
   }
   if (pitchType == "horizontal") {
     ctx.drawImage(horizontalPitch, 0, 0, canvas.width, canvas.height);
@@ -93,9 +114,54 @@ function drawCanvas(isFirstLoad = false) {
   }
   drawAllCircles(isFirstLoad);
   drawAllArrows(isFirstLoad);
+  drawAllPolygons(isFirstLoad);
   drawAllTexts(isFirstLoad);
 }
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//handle arrow and polygon checkboxes
+const checkboxDrawArrow = document.getElementById("draw-arrow-input");
+const checkboxDrawPolygon = document.getElementById("draw-polygon-input");
 
+function handleCheckboxDrawArrow() {
+  if (checkboxDrawArrow.checked) {
+    checkboxDrawPolygon.checked = false;
+    checkboxDrawPolygon.disabled = true;
+  } else {
+    checkboxDrawPolygon.disabled = false;
+  }
+}
+
+function handleCheckboxDrawPolygon() {
+  if (checkboxDrawPolygon.checked) {
+    checkboxDrawArrow.checked = false;
+    checkboxDrawArrow.disabled = true;
+  } else {
+    checkboxDrawArrow.disabled = false;
+  }
+}
+
+checkboxDrawArrow.addEventListener('change', handleCheckboxDrawArrow);
+checkboxDrawPolygon.addEventListener('change', handleCheckboxDrawPolygon);
+
+function toggleCheckboxDrawArrow() {
+  checkboxDrawArrow.checked = !checkboxDrawArrow.checked;
+  handleCheckboxDrawArrow(); 
+}
+
+function toggleCheckboxDrawPolygon() {
+  checkboxDrawPolygon.checked = !checkboxDrawPolygon.checked;
+  handleCheckboxDrawPolygon(); 
+}
 //
 //
 //
@@ -115,6 +181,7 @@ function drawCanvas(isFirstLoad = false) {
 let selectedCircleIndex;
 let selectedArrowIndex;
 let selectedTextIndex;
+let selectedPolygonIndex;
 
 //Circle
 
@@ -126,10 +193,9 @@ function drawAllCircles(isFirstLoad = false) {
     if (isFirstLoad == false) {
       circleObj.push(circle);
     }
-    drawCircle(circle, index === selectedCircleIndex)
+    drawCircle(circle, index === selectedCircleIndex);
   });
-  console.log(circleObj);
-  localStorage.setItem('circleObj', JSON.stringify(circleObj));
+  localStorage.setItem("circleObj", JSON.stringify(circleObj));
 }
 
 const addCircleBtn = document.getElementById("circle-btn");
@@ -137,13 +203,19 @@ let isCircleDragging = false;
 let draggingCircleIndex = -1;
 
 function drawCircle(circle, isSelected = false) {
-  if(circle.color == 'ball') {
+  if (circle.color == "ball") {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(circle.x, circle.y, circle.radius/2, 0, Math.PI * 2);
+    ctx.arc(circle.x, circle.y, circle.radius / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
-    ctx.drawImage(ballImg, circle.x - circle.radius, circle.y - circle.radius, circle.radius * 2, circle.radius * 2);
+    ctx.drawImage(
+      ballImg,
+      circle.x - circle.radius,
+      circle.y - circle.radius,
+      circle.radius * 2,
+      circle.radius * 2
+    );
   } else {
     ctx.save();
     ctx.beginPath();
@@ -161,7 +233,7 @@ function drawCircle(circle, isSelected = false) {
   let fontSize = 20 * responsiveConstant;
   ctx.font = `bold ${fontSize}px Albula`;
   ctx.textAlign = "center";
-  ctx.fillStyle = "white";
+  ctx.fillStyle = circle.textColor;
   ctx.fillText(circle.text, circle.x, circle.y + 6);
 
   let fontDetailsSize = 15 * responsiveConstant;
@@ -189,12 +261,16 @@ addCircleBtn.addEventListener("click", () => {
   let circleDetailsText = document.getElementById("circle-details-text").value
     ? document.getElementById("circle-details-text").value
     : "";
+  let circleTextColor = document.getElementById("circle-text-color").value
+    ? document.getElementById("circle-text-color").value
+    : "white";
   const newCircle = {
     x: canvas.width / 2,
     y: canvas.height / 2,
     radius: 20 * responsiveConstant,
     color: circleColor,
     text: circleText,
+    textColor: circleTextColor,
     detailsText: circleDetailsText,
   };
   circles.push(newCircle);
@@ -313,7 +389,7 @@ function drawAllArrows(isFirstLoad = false) {
       index === selectedArrowIndex
     );
   });
-  localStorage.setItem('arrowObj', JSON.stringify(arrowObj));
+  localStorage.setItem("arrowObj", JSON.stringify(arrowObj));
 }
 
 function isMouseOnArrowPoint(x, y, point) {
@@ -334,26 +410,26 @@ function isMouseOnArrow(mx, my, arrow) {
   return Math.abs(distance - arrowLength) < 3;
 }
 
-addArrowBtn.addEventListener("click", function () {
-  let color = document.querySelector("#arrow-color").value;
-  let type = document.querySelector("#arrow-type").value;
-  var centerX = canvas.width / 2;
-  var centerY = canvas.height / 2;
-  var newArrow = {
-    fromX: centerX - 50,
-    fromY: centerY,
-    toX: centerX + 50,
-    toY: centerY,
-    dragging: false,
-    offsetX: 0,
-    offsetY: 0,
-    color: color,
-    isArrow: document.getElementById("is-arrow").checked ? true : false,
-    type: type,
-  };
-  arrows.push(newArrow);
-  drawAllArrows();
-});
+// addArrowBtn.addEventListener("click", function () {
+//   let color = document.querySelector("#arrow-color").value;
+//   let type = document.querySelector("#arrow-type").value;
+//   var centerX = canvas.width / 2;
+//   var centerY = canvas.height / 2;
+//   var newArrow = {
+//     fromX: centerX - 50,
+//     fromY: centerY,
+//     toX: centerX + 50,
+//     toY: centerY,
+//     dragging: false,
+//     offsetX: 0,
+//     offsetY: 0,
+//     color: color,
+//     isArrow: document.getElementById("is-arrow").checked ? true : false,
+//     type: type,
+//   };
+//   arrows.push(newArrow);
+//   drawAllArrows();
+// });
 
 //
 //
@@ -384,9 +460,9 @@ function drawAllTexts(isFirstLoad = false) {
     if (isFirstLoad == false) {
       textObj.push(text);
     }
-    drawText(text, index === selectedTextIndex)}
-  );
-  localStorage.setItem('textObj', JSON.stringify(textObj));
+    drawText(text, index === selectedTextIndex);
+  });
+  localStorage.setItem("textObj", JSON.stringify(textObj));
 }
 
 function drawText(text, isSelected = false) {
@@ -407,7 +483,10 @@ function drawText(text, isSelected = false) {
     ctx.strokeStyle = "white";
     ctx.lineWidth = 3 * responsiveConstant;
     ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
   }
+  document.querySelector(".text-count").innerText = texts.length;
 }
 
 function isInsideText(x, y, text) {
@@ -456,7 +535,6 @@ function handleWheelEvent(event) {
 
 window.addEventListener("keydown", handleKeyDown);
 window.addEventListener("keyup", handleKeyUp);
-
 window.addEventListener("wheel", handleWheelEvent);
 
 /////////////////////////
@@ -500,6 +578,132 @@ addTextBtn.addEventListener("click", function () {
 //
 //
 //
+// Polygons
+let currentPolygon = [];
+function drawAllPolygons(isFirstLoad = false) {
+  if (isFirstLoad == false) {
+    polygonObj = [];
+  }
+  polygons.forEach((polygon, index) => {
+    if (isFirstLoad == false) {
+      polygonObj.push(polygon);
+    }
+  });
+  localStorage.setItem("polygonObj", JSON.stringify(polygonObj));
+  polygons.forEach((polygon, index) => {
+    ctx.fillStyle =
+      index == selectedPolygonIndex
+        ? "rgba(255, 0, 0, 0.3)"
+        : "rgba(255, 255, 255, 0.3)";
+
+    ctx.beginPath();
+    ctx.moveTo(polygon[0].x, polygon[0].y);
+    for (let i = 1; i < polygon.length; i++) {
+      ctx.lineTo(polygon[i].x, polygon[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    for (let i = 0; i < polygon.length; i++) {
+      if (i > 0) {
+        drawLine(polygon[i - 1], polygon[i]);
+      }
+    }
+    drawLine(polygon[polygon.length - 1], polygon[0]);
+  });
+
+  ctx.fillStyle = "white";
+  for (let i = 0; i < currentPolygon.length; i++) {
+    ctx.beginPath();
+    ctx.arc(currentPolygon[i].x, currentPolygon[i].y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (i > 0) {
+      drawLine(currentPolygon[i - 1], currentPolygon[i]);
+    }
+  }
+  document.querySelector(".polygon-count").innerText = polygons.length;
+}
+
+function getPolygonAtPoint(x, y) {
+  for (let i = 0; i < polygons.length; i++) {
+    if (isPointInPolygon({ x, y }, polygons[i])) {
+      return i;
+    }
+  }
+  return null;
+}
+
+function drawLine(p1, p2) {
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.strokeStyle = "white";
+  ctx.stroke();
+}
+
+function isPointInPolygon(point, polygon) {
+  let isInside = false;
+  let minX = polygon[0].x,
+    maxX = polygon[0].x;
+  let minY = polygon[0].y,
+    maxY = polygon[0].y;
+
+  for (let n = 1; n < polygon.length; n++) {
+    const q = polygon[n];
+    minX = Math.min(q.x, minX);
+    maxX = Math.max(q.x, maxX);
+    minY = Math.min(q.y, minY);
+    maxY = Math.max(q.y, maxY);
+  }
+
+  if (point.x < minX || point.x > maxX || point.y < minY || point.y > maxY) {
+    return false;
+  }
+
+  let i = 0,
+    j = polygon.length - 1;
+  for (i, j; i < polygon.length; j = i++) {
+    if (
+      polygon[i].y > point.y !== polygon[j].y > point.y &&
+      point.x <
+        ((polygon[j].x - polygon[i].x) * (point.y - polygon[i].y)) /
+          (polygon[j].y - polygon[i].y) +
+          polygon[i].x
+    ) {
+      isInside = !isInside;
+    }
+  }
+
+  return isInside;
+}
+
+document.getElementById("closePolygon").addEventListener("click", () => {
+  if (currentPolygon.length > 2) {
+    drawLine(currentPolygon[currentPolygon.length - 1], currentPolygon[0]);
+    polygons.push(currentPolygon);
+    currentPolygon = [];
+    toggleCheckboxDrawPolygon();
+    drawCanvas();
+  }
+});
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 // Canvas
 canvas.addEventListener("click", function (e) {
@@ -523,6 +727,10 @@ canvas.addEventListener("click", function (e) {
   }
 });
 
+let xDrawingArrow,
+  yDrawingArrow,
+  isDrawingArrow = false;
+
 canvas.addEventListener("mousedown", function (e) {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
@@ -541,6 +749,11 @@ canvas.addEventListener("mousedown", function (e) {
   }
 
   // arrow
+  if (document.getElementById("draw-arrow-input").checked) {
+    xDrawingArrow = mouseX;
+    yDrawingArrow = mouseY;
+    isDrawingArrow = true;
+  }
   selectedArrowIndex = -1;
   for (let i = 0; i < arrows.length; i++) {
     const arrow = arrows[i];
@@ -592,8 +805,26 @@ canvas.addEventListener("mousedown", function (e) {
       break;
     }
   }
+
+  //polygon
+  const x = e.offsetX;
+  const y = e.offsetY;
+  if (document.getElementById("draw-polygon-input").checked) {
+    const clickedPolygonIndex = getPolygonAtPoint(mouseX, mouseY);
+    if (clickedPolygonIndex != null) {
+      selectedPolygonIndex = clickedPolygonIndex;
+      drawCanvas();
+    } else {
+      currentPolygon.push({ x, y });
+      drawCanvas();
+    }
+  } else if (document.getElementById("draw-polygon-input").checked == false) {
+    selectedPolygonIndex = getPolygonAtPoint(mouseX, mouseY);
+    drawCanvas();
+  }
 });
 
+let newArrow;
 canvas.addEventListener("mousemove", function (e) {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
@@ -608,6 +839,25 @@ canvas.addEventListener("mousemove", function (e) {
   }
 
   // arrow
+  if (isDrawingArrow) {
+    let color = document.querySelector("#arrow-color").value;
+    let type = document.querySelector("#arrow-type").value;
+    newArrow = {
+      fromX: xDrawingArrow,
+      fromY: yDrawingArrow,
+      toX: mouseX,
+      toY: mouseY,
+      dragging: false,
+      offsetX: 0,
+      offsetY: 0,
+      color: color,
+      isArrow: document.getElementById("is-arrow").checked ? true : false,
+      type: type,
+    };
+    drawAllArrows();
+    drawArrow(newArrow);
+  }
+
   if (draggingArrow) {
     if (draggingArrowPoint === "from") {
       draggingArrow.fromX = mouseX - dragOffsetX;
@@ -649,6 +899,11 @@ canvas.addEventListener("mouseup", function () {
   isCircleDragging = false;
   isTextDragging = false;
   draggingCircleIndex = -1;
+  if (isDrawingArrow) {
+    arrows.push(newArrow);
+    toggleCheckboxDrawArrow();
+    isDrawingArrow = false;
+  }
 });
 
 canvas.addEventListener("mouseout", function () {
@@ -657,42 +912,66 @@ canvas.addEventListener("mouseout", function () {
   isCircleDragging = false;
   isTextDragging = false;
   draggingCircleIndex = -1;
+  drawCanvas();
 });
 
 document.getElementById("export-btn").addEventListener("click", exportCanvas);
+
 function exportCanvas() {
-  // Create a temporary canvas to export a high-resolution image
   const exportCanvas = document.createElement("canvas");
   const exportCtx = exportCanvas.getContext("2d");
-  const scale = 3; // Scale factor for higher resolution
+  const scale = 4;
 
-  // Set the size of the temporary canvas
   exportCanvas.width = canvas.width * scale;
   exportCanvas.height = canvas.height * scale;
 
-  // Scale the context to increase resolution
   exportCtx.scale(scale, scale);
 
-  // Draw everything onto the temporary canvas
   let pitchType = document.getElementById("pitch-type").value;
-  if (pitchType == "horizontal") {
+  if (pitchType === "horizontal") {
     exportCtx.drawImage(horizontalPitch, 0, 0, canvas.width, canvas.height);
-  } else if (pitchType == "half") {
+  } else if (pitchType === "half") {
     exportCtx.drawImage(halfPitch, 0, 0, canvas.width, canvas.height);
-  } else if (pitchType == "vertical") {
+  } else if (pitchType === "vertical") {
     exportCtx.drawImage(verticalPitch, 0, 0, canvas.width, canvas.height);
   }
 
+  if (typeof polygons !== "undefined" && Array.isArray(polygons)) {
+    polygons.forEach((polygon) => {
+      if (polygon.length > 0) {
+        exportCtx.fillStyle = "rgba(255, 255, 255, 0.3)";
+
+        exportCtx.beginPath();
+        exportCtx.moveTo(polygon[0].x, polygon[0].y);
+        for (let i = 1; i < polygon.length; i++) {
+          exportCtx.lineTo(polygon[i].x, polygon[i].y);
+        }
+        exportCtx.closePath();
+        exportCtx.fill();
+
+        exportCtx.strokeStyle = "white";
+        exportCtx.lineWidth = 1;
+        exportCtx.stroke();
+      }
+    });
+  }
+
   circles.forEach((circle) => {
-    if(circle.color == 'ball') {
+    if (circle.color === "ball") {
       exportCtx.save();
       exportCtx.beginPath();
-      exportCtx.arc(circle.x, circle.y, circle.radius/2, 0, Math.PI * 2);
+      exportCtx.arc(circle.x, circle.y, circle.radius / 2, 0, Math.PI * 2);
       exportCtx.closePath();
       exportCtx.clip();
-      exportCtx.drawImage(ballImg, circle.x - circle.radius, circle.y - circle.radius, circle.radius * 2, circle.radius * 2);
+      exportCtx.drawImage(
+        ballImg,
+        circle.x - circle.radius,
+        circle.y - circle.radius,
+        circle.radius * 2,
+        circle.radius * 2
+      );
       exportCtx.restore();
-    } else if (circle.color != 'ball') {
+    } else if (circle.color !== "ball") {
       exportCtx.save();
       exportCtx.beginPath();
       exportCtx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
@@ -701,6 +980,7 @@ function exportCanvas() {
       exportCtx.restore();
     }
 
+    // text
     let fontSize = 20 * responsiveConstant;
     exportCtx.font = `bold ${fontSize}px Albula`;
     exportCtx.textAlign = "center";
@@ -715,13 +995,13 @@ function exportCanvas() {
     exportCtx.fillText(circle.detailsText, circle.x, circle.y + 26);
   });
 
+  // arrow
   arrows.forEach((arrow) => {
-    var headlen = 13 * responsiveConstant; // Chiều dài đầu mũi tên
+    var headlen = 13 * responsiveConstant;
     var angle = Math.atan2(arrow.toY - arrow.fromY, arrow.toX - arrow.fromX);
 
-    // Vẽ thân mũi tên
     exportCtx.beginPath();
-    if (arrow.type == "dash") {
+    if (arrow.type === "dash") {
       exportCtx.setLineDash([15 * responsiveConstant, 15 * responsiveConstant]);
     }
     exportCtx.moveTo(arrow.fromX, arrow.fromY);
@@ -731,7 +1011,6 @@ function exportCanvas() {
     exportCtx.lineWidth = 3 * responsiveConstant;
     exportCtx.stroke();
 
-    // Vẽ đầu mũi tên
     if (arrow.isArrow) {
       exportCtx.setLineDash([]);
       exportCtx.beginPath();
@@ -754,7 +1033,6 @@ function exportCanvas() {
     }
   });
 
-  //text
   texts.forEach((text) => {
     let fontSize = text.fontSize * responsiveConstant;
     exportCtx.save();
@@ -768,10 +1046,8 @@ function exportCanvas() {
     exportCtx.restore();
   });
 
-  // Convert the temporary canvas to a data URL
   const dataURL = exportCanvas.toDataURL("image/jpeg");
 
-  // Create a link to download the image
   const link = document.createElement("a");
   link.href = dataURL;
   link.download = "Goal-Line Tactical Board.jpg";
@@ -782,8 +1058,11 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   circles = [];
   arrows = [];
   texts = [];
+  polygons = [];
   document.querySelector(".circle-count").innerText = circles.length;
   document.querySelector(".arrow-count").innerText = arrows.length;
+  document.querySelector(".text-count").innerText = texts.length;
+  document.querySelector(".polygon-count").innerText = polygons.length;
   drawCanvas();
 });
 
@@ -803,7 +1082,14 @@ document.getElementById("delete-btn").addEventListener("click", () => {
     selectedTextIndex = -1;
     drawCanvas();
   }
+  if (selectedPolygonIndex !== null) {
+    polygons.splice(selectedPolygonIndex, 1);
+    selectedPolygonIndex = null;
+    drawCanvas();
+  }
 
   document.querySelector(".circle-count").innerText = circles.length;
   document.querySelector(".arrow-count").innerText = arrows.length;
+  document.querySelector(".text-count").innerText = texts.length;
+  document.querySelector(".polygon-count").innerText = polygons.length;
 });
