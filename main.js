@@ -984,7 +984,7 @@ function exportCanvas() {
     let fontSize = 20 * responsiveConstant;
     exportCtx.font = `bold ${fontSize}px Albula`;
     exportCtx.textAlign = "center";
-    exportCtx.fillStyle = "white";
+    exportCtx.fillStyle = circle.textColor;
     exportCtx.fillText(circle.text, circle.x, circle.y + 6);
     exportCtx.closePath();
 
