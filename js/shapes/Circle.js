@@ -52,7 +52,7 @@ export class Circle {
         }
 
         // Vẽ Số Áo (Font to)
-        let fontSize = 20 * responsiveConstant * userScale;
+        let fontSize = 22 * responsiveConstant * userScale;
         ctx.font = `bold ${fontSize}px ${CONFIG.fonts.number}`;
         ctx.textAlign = "center";
         ctx.fillStyle = this.textColor;
@@ -63,7 +63,7 @@ export class Circle {
             let fontDetailsSize = 15 * responsiveConstant * userScale;
             ctx.font = `bold ${fontDetailsSize}px ${CONFIG.fonts.name}`;
             ctx.fillStyle = "white";
-            ctx.fillText(this.detailsText, this.x, this.y + (26 * responsiveConstant * userScale));
+            ctx.fillText(this.detailsText, this.x, this.y + (35 * responsiveConstant * userScale));
         }
 
         ctx.closePath();

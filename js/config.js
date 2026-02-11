@@ -9,8 +9,8 @@ export const CONFIG = {
     baseWidth: 900,
     baseHeight: 600,
     fonts: {
-        number: "Albula, Arial, sans-serif",  
-        name: "Seriguela, Segoe UI, Roboto, Arial, sans-serif" 
+        name: "Albula, Arial, sans-serif",  
+        number: "Seriguela, Segoe UI, Roboto, Arial, sans-serif" 
     },
     defaultFontSize: 20
 };
