@@ -22,6 +22,7 @@ const AppState = {
     selectedType: null, // 'circle', 'arrow', 'text', 'polygon'
     isDragging: false,
     dragOffset: { x: 0, y: 0 },
+    lastMousePos: { x: 0, y: 0 }, // tính delta polygon
     
     // Drawing Modes
     mode: 'select', // 'select', 'drawArrow', 'drawPolygon'
@@ -184,6 +185,22 @@ canvas.addEventListener("mousedown", (e) => {
         }
     }
 
+    //Polygon Priority
+    for (let i = AppState.polygons.length - 1; i >= 0; i--) {
+        // Truyền đúng x, y riêng biệt
+        if (AppState.polygons[i].isHit(pos.x, pos.y)) {
+            AppState.selectedObj = AppState.polygons[i];
+            AppState.selectedType = 'polygon';
+            AppState.isDragging = true;
+            
+            // Lưu vị trí chuột hiện tại để tí nữa tính toán di chuyển
+            AppState.lastMousePos = { x: pos.x, y: pos.y }; 
+            
+            render();
+            return;
+        }
+    }
+
     render();
 });
 
@@ -213,6 +230,16 @@ canvas.addEventListener("mousemove", (e) => {
                 arr.toX = pos.x - AppState.dragOffset.toX;
                 arr.toY = pos.y - AppState.dragOffset.toY;
             }
+        } else if (AppState.selectedType === 'polygon') {
+            // 1. Tính khoảng cách chuột đã di chuyển so với frame trước
+            const dx = pos.x - AppState.lastMousePos.x;
+            const dy = pos.y - AppState.lastMousePos.y;
+            
+            // 2. Cộng khoảng cách đó vào toạ độ của Polygon
+            AppState.selectedObj.move(dx, dy);
+            
+            // 3. Cập nhật lại vị trí chuột cũ thành hiện tại cho lần tính tiếp theo
+            AppState.lastMousePos = { x: pos.x, y: pos.y };
         }
         render();
     }
