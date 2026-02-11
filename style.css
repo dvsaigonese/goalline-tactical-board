@@ -1,80 +1,224 @@
-/* CSS Reset */
 @font-face {
   font-family: "Albula";
-  src: url("assets/fonts/AlbulaProBold.otf") format("truetype");
+  src: url("assets/fonts/FZ-ALBULA-BLACK.TTF") format("opentype");
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@font-face {
+  font-family: "Seriguela";
+  src: url("assets/fonts/Seriguela-Black.otf") format("opentype");
 }
 
-html,
+/* --- 1. Variables & Reset --- */
+:root {
+    --bg-dark: #18181b;       /* Nền tổng thể tối hơn */
+    --bg-panel: #27272a;      /* Nền panel */
+    --primary: #3b82f6;       /* Màu chủ đạo (Xanh) */
+    --accent: #f59e0b;        /* Màu nhấn (Vàng) */
+    --danger: #ef4444;        /* Màu đỏ */
+    --text-main: #e4e4e7;
+    --text-muted: #a1a1aa;
+    --border: #3f3f46;
+    --radius: 8px;
+    --header-height: 0px;     /* Chúng ta full màn hình nên không cần header */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
 body {
-  height: 100%;
-  width: 100%;
-  font-family: "Albula", Arial, sans-serif; /* Optional: Set a default font */
-  background-color: #000000;
-  color: #ffffff;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden; /* Cấm scroll body */
 }
 
-body {
-  line-height: 1.6; /* Optional: Set a default line height */
-  transform-origin: top center; 
-  transform: scale(1); 
+/* --- 2. Layout Grid/Flex --- */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
 }
 
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
+/* --- 3. Sidebar Toolbar (Left) --- */
+.toolbar {
+    width: 64px;
+    background-color: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+    z-index: 10;
 }
 
-ul,
-ol {
-  list-style: none;
+.logo img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-bottom: 24px;
+    border: 2px solid var(--primary);
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
+.tool-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    align-items: center;
 }
 
-table {
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-canvas {
-  border: 1px solid white;
-}
-.circle {
-  display: inline-block;
-  line-height: 0px;
-  border-radius: 50%;
-  border: 1px solid white;
-  color: white;
-}
-.count {
-  display: inline-block;
-  padding-top: 50%;
-  padding-bottom: 50%;
-  margin-left: 8px;
-  margin-right: 8px;
-}
-img {
-  border: 1px solid #ffffff;
-  height: 80%;
+.tool-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.2rem;
+    border: none;
+    background: transparent;
 }
 
-@media screen and (max-width: 768px) {
-  body {
-    -webkit-overflow-scrolling: touch; /* Safari 3.1+ */
-    -moz-overflow-scrolling: touch; /* Firefox 2+ */
-    -ms-overflow-scrolling: touch; /* IE 10+ */
-    -webkit-user-select: none; /* Safari 3.1+ */
-    -moz-user-select: none; /* Firefox 2+ */
-    -ms-user-select: none; /* IE 10+ */
-    user-select: none; /* Standard syntax */
-  }
+.tool-btn:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+}
+
+/* Trạng thái Active khi Checkbox được chọn */
+.tool-checkbox:checked + .tool-btn {
+    background-color: var(--primary);
+    color: white;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.spacer { flex-grow: 1; }
+
+.tool-group.bottom { margin-top: auto; }
+.tool-btn.primary { color: var(--primary); }
+.tool-btn.warning { color: var(--accent); }
+.tool-btn.danger { color: var(--danger); }
+
+/* --- 4. Main Canvas Area (Center) --- */
+.canvas-area {
+    flex-grow: 1;
+    background-color: #000; /* Nền đen sau sân bóng */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.canvas-wrapper {
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+    /* Đây là chỗ quan trọng: Canvas sẽ nằm gọn trong wrapper này */
+}
+
+.copyright {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+/* --- 5. Settings Panel (Right) --- */
+.settings-panel {
+    width: 280px;
+    background-color: var(--bg-panel);
+    border-left: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.settings-panel h3 {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.setting-group { margin-bottom: 16px; }
+.setting-group label {
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+}
+
+.form-control {
+    width: 100%;
+    background-color: #18181b;
+    border: 1px solid var(--border);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    outline: none;
+    font-size: 0.9rem;
+    transition: 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--primary);
+}
+
+.row-input {
+    display: flex;
+    gap: 8px;
+}
+
+.add-btn {
+    background-color: var(--primary);
+    border: none;
+    color: white;
+    border-radius: 6px;
+    width: 36px;
+    cursor: pointer;
+}
+.add-btn:hover { opacity: 0.9; }
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 0.9rem;
+}
+
+.mt-2 { margin-top: 8px; }
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+}
+
+.tip {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+    display: block;
+    margin-top: 8px;
+}
+
+/* Responsive cho màn hình nhỏ */
+@media (max-width: 768px) {
+    .app-container { flex-direction: column; }
+    .toolbar { 
+        width: 100%; 
+        height: 50px; 
+        flex-direction: row; 
+        padding: 0 10px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+    .tool-group { flex-direction: row; width: auto; }
+    .logo { display: none; }
+    .settings-panel { display: none; /* Hoặc làm nút toggle để hiện */ }
 }
