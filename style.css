@@ -53,9 +53,7 @@ body {
 .logo img {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
     margin-bottom: 24px;
-    border: 2px solid var(--primary);
 }
 
 .tool-group {
@@ -221,4 +219,92 @@ hr {
     .tool-group { flex-direction: row; width: auto; }
     .logo { display: none; }
     .settings-panel { display: none; /* Hoặc làm nút toggle để hiện */ }
+}
+
+
+/* --- Startup Modal --- */
+.startup-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.95); /* Nền đen mờ */
+    z-index: 9999; /* Luôn nổi trên cùng */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+.startup-box {
+    background-color: var(--bg-panel);
+    padding: 40px;
+    border-radius: 16px;
+    text-align: center;
+    border: 1px solid var(--border);
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+}
+
+.startup-box h2 { margin-bottom: 10px; color: white; }
+.startup-box p { color: var(--text-muted); margin-bottom: 30px; }
+
+.startup-options {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.startup-btn {
+    flex: 1;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background-color: rgba(255,255,255,0.05);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.startup-btn i { font-size: 2rem; margin-bottom: 5px; }
+.startup-btn span { font-weight: bold; font-size: 1.1rem; }
+.startup-btn small { color: var(--text-muted); font-size: 0.8rem; }
+
+.startup-btn:hover { transform: translateY(-5px); border-color: var(--primary); }
+.startup-btn.primary:hover { background-color: var(--primary); }
+.startup-btn.accent:hover { background-color: var(--accent); color: black; }
+.startup-btn.accent:hover small { color: #333; }
+
+/* Ẩn mũi tên tăng giảm mặc định của input number để nhìn gọn hơn */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+input[type=number] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+/* Style cho ô nhập số khi focus */
+#scale-number:focus {
+    border-color: var(--primary);
+    background-color: #3f3f46;
+}
+
+/* --- Tùy chỉnh thanh cuộn cho Panel bên phải --- */
+
+/* Ẩn thanh cuộn trên Chrome/Safari/Edge */
+.settings-panel::-webkit-scrollbar {
+    display: none;
+}
+
+/* Ẩn thanh cuộn trên Firefox/IE */
+.settings-panel {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }

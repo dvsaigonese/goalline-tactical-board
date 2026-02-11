@@ -5,35 +5,34 @@ export class Arrow {
         this.toX = toX;
         this.toY = toY;
         this.color = color;
-        this.type = type; // 'solid' hoặc 'dash'
+        this.type = type;
         this.isArrow = isArrow;
     }
 
-    draw(ctx, responsiveConstant = 1, isSelected = false) {
-        const headlen = 13 * responsiveConstant; 
+    draw(ctx, responsiveConstant = 1, isSelected = false, userScale = 1.0) {
+        // Scale các thông số kích thước
+        const headlen = 13 * responsiveConstant * userScale; 
+        const lineWidth = 3 * responsiveConstant * userScale;
         const angle = Math.atan2(this.toY - this.fromY, this.toX - this.fromX);
 
         ctx.save();
         ctx.beginPath();
         
-        // Xử lý nét đứt
         if (this.type === "dash") {
-            ctx.setLineDash([15 * responsiveConstant, 15 * responsiveConstant]);
+            ctx.setLineDash([15 * responsiveConstant * userScale, 15 * responsiveConstant * userScale]);
         } else {
             ctx.setLineDash([]);
         }
 
-        // Vẽ thân
         ctx.moveTo(this.fromX, this.fromY);
         ctx.lineTo(this.toX, this.toY);
         ctx.strokeStyle = this.color;
         ctx.fillStyle = this.color;
-        ctx.lineWidth = 3 * responsiveConstant;
+        ctx.lineWidth = lineWidth;
         ctx.stroke();
 
-        // Vẽ đầu mũi tên
         if (this.isArrow) {
-            ctx.setLineDash([]); // Đầu mũi tên luôn nét liền
+            ctx.setLineDash([]);
             ctx.beginPath();
             ctx.moveTo(this.toX, this.toY);
             ctx.lineTo(
@@ -53,38 +52,37 @@ export class Arrow {
             ctx.fill();
         }
 
-        // Vẽ 2 điểm tròn để kéo khi được chọn
         if (isSelected) {
-            this.drawHandle(ctx, this.fromX, this.fromY, responsiveConstant);
-            this.drawHandle(ctx, this.toX, this.toY, responsiveConstant);
+            this.drawHandle(ctx, this.fromX, this.fromY, responsiveConstant, userScale);
+            this.drawHandle(ctx, this.toX, this.toY, responsiveConstant, userScale);
         }
         ctx.restore();
     }
 
-    drawHandle(ctx, x, y, responsiveConstant) {
+    drawHandle(ctx, x, y, responsiveConstant, userScale) {
         ctx.beginPath();
-        ctx.arc(x, y, 10 * responsiveConstant, 0, Math.PI * 2);
-        ctx.fillStyle = this.color; // Hoặc màu khác để dễ nhìn
+        ctx.arc(x, y, 10 * responsiveConstant * userScale, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
         ctx.fill();
         ctx.closePath();
     }
 
-    // Kiểm tra click vào thân mũi tên (để di chuyển cả mũi tên)
-    isHitBody(mx, my) {
+    isHitBody(mx, my, userScale = 1.0) {
         const distance =
             Math.sqrt(Math.pow(mx - this.fromX, 2) + Math.pow(my - this.fromY, 2)) +
             Math.sqrt(Math.pow(mx - this.toX, 2) + Math.pow(my - this.toY, 2));
         const arrowLength = Math.sqrt(
             Math.pow(this.toX - this.fromX, 2) + Math.pow(this.toY - this.fromY, 2)
         );
-        return Math.abs(distance - arrowLength) < 5; // Tăng biên độ lên 5 cho dễ click
+        // Tăng vùng click nếu scale to
+        const threshold = 5 * userScale; 
+        return Math.abs(distance - arrowLength) < threshold;
     }
 
-    // Kiểm tra click vào điểm đầu hoặc cuối (để resize)
-    isHitHandle(mx, my, pointType = 'from', responsiveConstant = 1) {
+    isHitHandle(mx, my, pointType = 'from', responsiveConstant = 1, userScale = 1.0) {
         const targetX = pointType === 'from' ? this.fromX : this.toX;
         const targetY = pointType === 'from' ? this.fromY : this.toY;
-        const radius = 10 * responsiveConstant;
+        const radius = 10 * responsiveConstant * userScale;
         
         const dx = mx - targetX;
         const dy = my - targetY;

@@ -3,7 +3,10 @@ import { Arrow } from './shapes/Arrow.js';
 import { TextObj } from './shapes/TextObj.js';
 import { Polygon } from './shapes/Polygon.js';
 import { Storage } from './storage.js';
-import { canvas, ctx, loadImages, resizeCanvas, drawPitch, clearCanvas, getImages, responsiveConstant } from './canvas.js';
+import { 
+    canvas, ctx, loadImages, resizeCanvas, drawPitch, clearCanvas, getImages, responsiveConstant, 
+    setCustomBackground, clearCustomBackground, saveCustomBackgroundToStorage, loadCustomBackgroundFromStorage 
+} from './canvas.js';
 import { getMousePos } from './utils.js';
 
 // --- STATE MANAGEMENT ---
@@ -25,33 +28,39 @@ const AppState = {
     drawingArrow: null,
     drawingPolygonPoints: [],
     
-    // Cache Arrow dragging point
-    arrowDragPoint: null // 'from' or 'to'
+    arrowDragPoint: null, // 'from', 'to', 'body'
+    
+    // Global Scale (Mặc định 1.0)
+    userScale: 1.0 
 };
 
 // --- INITIALIZATION ---
 async function init() {
-    // 1. Load Images
     await loadImages();
     
-    // 2. Load Data from Storage
+    // 1. Load dữ liệu object từ Storage (nhưng chưa render lên ngay)
     const data = Storage.load();
-    // Re-instantiate objects from plain JSON data
-    AppState.pitchType = data.pitchType;
-    document.getElementById("pitch-type").value = AppState.pitchType;
-
-    AppState.circles = data.circles.map(d => new Circle(d.x, d.y, d.radius, d.color, d.text, d.textColor, d.detailsText));
-    AppState.arrows = data.arrows.map(d => new Arrow(d.fromX, d.fromY, d.toX, d.toY, d.color, d.type, d.isArrow));
-    AppState.texts = data.texts.map(d => new TextObj(d.x, d.y, d.text, d.fontSize, d.rotate));
-    AppState.polygons = data.polygons.map(d => new Polygon(d)); // Polygon constructor takes array of points
+    const hasObjectData = data.circles.length > 0 || data.arrows.length > 0 || data.texts.length > 0;
     
-    // 3. Initial Render
-    resizeCanvas(AppState.pitchType);
-    render();
-    updateCounts();
+    // 2. Load ảnh nền Custom từ Storage (nếu có)
+    const hasCustomBg = await loadCustomBackgroundFromStorage();
+    
+    // 3. Logic hiển thị nút Continue
+    const continueSection = document.getElementById("continue-section");
+    const startupModal = document.getElementById("startup-modal");
+    
+    if (hasObjectData || hasCustomBg) {
+        continueSection.style.display = "block";
+    } else {
+        continueSection.style.display = "none";
+    }
 
-    // 4. Update Copyright
-    document.querySelector(".copyright").innerHTML = `© ${new Date().getFullYear()} Goal-Line`;
+    // Hiển thị modal khi mới vào
+    startupModal.style.display = "flex";
+
+    // Setup giá trị mặc định cho Slider & Number Input
+    document.getElementById("global-scale").value = AppState.userScale;
+    document.getElementById("scale-number").value = AppState.userScale;
 }
 
 // --- RENDER LOOP ---
@@ -61,37 +70,37 @@ function render() {
     const imgs = getImages();
 
     // Draw Polygons
-    AppState.polygons.forEach((p, i) => {
+    AppState.polygons.forEach((p) => {
         const isSelected = (AppState.selectedObj === p);
-        p.draw(ctx, isSelected);
+        p.draw(ctx, isSelected, AppState.userScale);
     });
-    // Draw current drawing polygon
+    // Draw drawing polygon
     if (AppState.drawingPolygonPoints.length > 0) {
-        new Polygon(AppState.drawingPolygonPoints).draw(ctx, true);
+        new Polygon(AppState.drawingPolygonPoints).draw(ctx, true, AppState.userScale);
     }
 
     // Draw Arrows
-    AppState.arrows.forEach((a, i) => {
+    AppState.arrows.forEach((a) => {
         const isSelected = (AppState.selectedObj === a);
-        a.draw(ctx, responsiveConstant, isSelected);
+        a.draw(ctx, responsiveConstant, isSelected, AppState.userScale);
     });
     if (AppState.drawingArrow) {
-        AppState.drawingArrow.draw(ctx, responsiveConstant, true);
+        AppState.drawingArrow.draw(ctx, responsiveConstant, true, AppState.userScale);
     }
 
     // Draw Circles
-    AppState.circles.forEach((c, i) => {
+    AppState.circles.forEach((c) => {
         const isSelected = (AppState.selectedObj === c);
-        c.draw(ctx, imgs.ball, responsiveConstant, isSelected);
+        c.draw(ctx, imgs.ball, responsiveConstant, isSelected, AppState.userScale);
     });
 
     // Draw Texts
-    AppState.texts.forEach((t, i) => {
+    AppState.texts.forEach((t) => {
         const isSelected = (AppState.selectedObj === t);
-        t.draw(ctx, responsiveConstant, isSelected);
+        t.draw(ctx, responsiveConstant, isSelected, AppState.userScale);
     });
     
-    // Save state
+    // Save state objects
     Storage.save(AppState.circles, AppState.arrows, AppState.texts, AppState.polygons, AppState.pitchType);
 }
 
@@ -107,7 +116,6 @@ canvas.addEventListener("mousedown", (e) => {
         const color = document.getElementById("arrow-color").value;
         const type = document.getElementById("arrow-type").value;
         const isArrow = document.getElementById("is-arrow").checked;
-        
         AppState.drawingArrow = new Arrow(pos.x, pos.y, pos.x, pos.y, color, type, isArrow);
         return;
     }
@@ -115,86 +123,68 @@ canvas.addEventListener("mousedown", (e) => {
     // Mode: Draw Polygon
     if (document.getElementById("draw-polygon-input").checked) {
         AppState.mode = 'drawPolygon';
-        // Check if clicking on existing polygon to select it (optional) or just add point
         AppState.drawingPolygonPoints.push({x: pos.x, y: pos.y});
         render();
         return;
     }
 
-    // Mode: Select / Drag
+    // Mode: Select
     AppState.mode = 'select';
     AppState.selectedObj = null;
     AppState.isDragging = false;
 
-    // Check hit (Priority: Text > Circle > Arrow > Polygon)
+    // Check Hit (Truyền userScale vào để vùng click chính xác)
     
-    // Check Texts
+    // Text Priority
     for (let i = AppState.texts.length - 1; i >= 0; i--) {
-        if (AppState.texts[i].isHit(pos.x, pos.y, ctx, responsiveConstant)) {
+        if (AppState.texts[i].isHit(pos.x, pos.y, ctx, responsiveConstant, AppState.userScale)) {
             AppState.selectedObj = AppState.texts[i];
             AppState.selectedType = 'text';
             AppState.isDragging = true;
             AppState.dragOffset = { x: pos.x - AppState.texts[i].x, y: pos.y - AppState.texts[i].y };
-            render();
-            return;
+            render(); return;
         }
     }
 
-    // Check Circles
+    // Circle Priority
     for (let i = AppState.circles.length - 1; i >= 0; i--) {
-        if (AppState.circles[i].isHit(pos.x, pos.y)) {
+        if (AppState.circles[i].isHit(pos.x, pos.y, AppState.userScale)) {
             AppState.selectedObj = AppState.circles[i];
             AppState.selectedType = 'circle';
             AppState.isDragging = true;
-            // Center dragging for circles usually feels better, or calc offset
             AppState.dragOffset = { x: pos.x - AppState.circles[i].x, y: pos.y - AppState.circles[i].y };
-            render();
-            return;
+            render(); return;
         }
     }
 
-    // Check Arrows (Handles first, then Body)
+    // Arrow Priority
     for (let i = AppState.arrows.length - 1; i >= 0; i--) {
         const arr = AppState.arrows[i];
-        if (arr.isHitHandle(pos.x, pos.y, 'from', responsiveConstant)) {
+        if (arr.isHitHandle(pos.x, pos.y, 'from', responsiveConstant, AppState.userScale)) {
             AppState.selectedObj = arr;
             AppState.selectedType = 'arrow';
             AppState.isDragging = true;
             AppState.arrowDragPoint = 'from';
             render(); return;
         }
-        if (arr.isHitHandle(pos.x, pos.y, 'to', responsiveConstant)) {
+        if (arr.isHitHandle(pos.x, pos.y, 'to', responsiveConstant, AppState.userScale)) {
             AppState.selectedObj = arr;
             AppState.selectedType = 'arrow';
             AppState.isDragging = true;
             AppState.arrowDragPoint = 'to';
             render(); return;
         }
-        if (arr.isHitBody(pos.x, pos.y)) {
+        if (arr.isHitBody(pos.x, pos.y, AppState.userScale)) {
             AppState.selectedObj = arr;
             AppState.selectedType = 'arrow';
             AppState.isDragging = true;
             AppState.arrowDragPoint = 'body';
-            AppState.dragOffset = { 
-                fromX: pos.x - arr.fromX, fromY: pos.y - arr.fromY,
-                toX: pos.x - arr.toX, toY: pos.y - arr.toY
-            };
+            AppState.dragOffset = { fromX: pos.x - arr.fromX, fromY: pos.y - arr.fromY, toX: pos.x - arr.toX, toY: pos.y - arr.toY };
             render(); return;
         }
     }
 
-    // Check Polygons
-    for (let i = AppState.polygons.length - 1; i >= 0; i--) {
-        if (AppState.polygons[i].isHit(pos)) {
-            AppState.selectedObj = AppState.polygons[i];
-            AppState.selectedType = 'polygon';
-            // Polygon dragging not implemented yet, just select
-            render();
-            return;
-        }
-    }
-
-    render(); // Clear selection if clicked outside
+    render();
 });
 
 canvas.addEventListener("mousemove", (e) => {
@@ -208,15 +198,10 @@ canvas.addEventListener("mousemove", (e) => {
     }
 
     if (AppState.isDragging && AppState.selectedObj) {
-        if (AppState.selectedType === 'circle') {
+        if (AppState.selectedType === 'circle' || AppState.selectedType === 'text') {
             AppState.selectedObj.x = pos.x - AppState.dragOffset.x;
             AppState.selectedObj.y = pos.y - AppState.dragOffset.y;
-        } 
-        else if (AppState.selectedType === 'text') {
-            AppState.selectedObj.x = pos.x - AppState.dragOffset.x;
-            AppState.selectedObj.y = pos.y - AppState.dragOffset.y;
-        }
-        else if (AppState.selectedType === 'arrow') {
+        } else if (AppState.selectedType === 'arrow') {
             const arr = AppState.selectedObj;
             if (AppState.arrowDragPoint === 'from') {
                 arr.fromX = pos.x; arr.fromY = pos.y;
@@ -238,136 +223,235 @@ canvas.addEventListener("mouseup", () => {
         AppState.arrows.push(AppState.drawingArrow);
         AppState.drawingArrow = null;
         AppState.mode = 'select';
-        document.getElementById("draw-arrow-input").checked = false; // Toggle off UI
-        document.getElementById("draw-polygon-input").disabled = false;
+        document.getElementById("draw-arrow-input").checked = false;
         updateCounts();
     }
-    
     AppState.isDragging = false;
     AppState.arrowDragPoint = null;
     render();
 });
 
+// 2. UI & Startup Logic
 
-// 2. UI Controls Logic
+// Nút Home: Quay về màn hình chọn mode
+document.getElementById("home-btn").addEventListener("click", () => {
+    const hasData = AppState.circles.length > 0 || AppState.arrows.length > 0 || AppState.texts.length > 0;
+    document.getElementById("continue-section").style.display = hasData ? "block" : "none";
+    document.getElementById("startup-modal").style.display = "flex";
+});
 
-// Pitch Type Change
+// Nút Continue: Load lại session cũ
+document.getElementById("btn-continue").addEventListener("click", () => {
+    document.getElementById("startup-modal").style.display = "none";
+    
+    // Nếu có custom bg thì khóa select
+    if (localStorage.getItem('customBgData')) {
+         document.getElementById("pitch-type").disabled = true;
+    }
+    
+    // Re-hydrate objects
+    const data = Storage.load();
+    if(data) {
+        AppState.circles = data.circles.map(d => new Circle(d.x, d.y, d.radius, d.color, d.text, d.textColor, d.detailsText));
+        AppState.arrows = data.arrows.map(d => new Arrow(d.fromX, d.fromY, d.toX, d.toY, d.color, d.type, d.isArrow));
+        AppState.texts = data.texts.map(d => new TextObj(d.x, d.y, d.text, d.fontSize, d.rotate));
+        AppState.polygons = data.polygons.map(d => new Polygon(d));
+        AppState.pitchType = data.pitchType || 'horizontal';
+    }
+
+    resizeCanvas(AppState.pitchType);
+    updateCounts();
+    render();
+});
+
+// Nút Template Mode
+document.getElementById("btn-template-mode").addEventListener("click", () => {
+    document.getElementById("startup-modal").style.display = "none";
+    clearCustomBackground();
+    saveCustomBackgroundToStorage(); // Save null -> Xóa
+    document.getElementById("pitch-type").disabled = false;
+    
+    // Reset workspace option
+    if(confirm("Start fresh workspace?")) {
+        AppState.circles = []; AppState.arrows = []; AppState.texts = []; AppState.polygons = [];
+        Storage.clear();
+    }
+    
+    resizeCanvas(AppState.pitchType);
+    updateCounts();
+    render();
+});
+
+// Nút Custom Image Mode
+document.getElementById("btn-custom-mode").addEventListener("click", () => {
+    document.getElementById("custom-img-input").click();
+});
+
+// Input File Change Logic
+document.getElementById("custom-img-input").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Warning
+    if (AppState.circles.length > 0) {
+        if (!confirm("This will clear your current tactics. Continue?")) {
+            e.target.value = ''; return;
+        }
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        const imgUrl = event.target.result;
+        await setCustomBackground(imgUrl);
+        saveCustomBackgroundToStorage();
+
+        document.getElementById("startup-modal").style.display = "none";
+        document.getElementById("pitch-type").disabled = true;
+
+        // Clear objects
+        AppState.circles = []; AppState.arrows = []; AppState.texts = []; AppState.polygons = [];
+        Storage.clear();
+        
+        resizeCanvas(AppState.pitchType);
+        updateCounts();
+        render();
+    };
+    reader.readAsDataURL(file);
+});
+
+// --- SCALE CONTROL LOGIC (Slider + Input) ---
+const scaleSlider = document.getElementById("global-scale");
+const scaleNumber = document.getElementById("scale-number");
+
+// 1. Slider Change
+scaleSlider.addEventListener("input", (e) => {
+    const val = parseFloat(e.target.value);
+    AppState.userScale = val;
+    scaleNumber.value = val;
+    render();
+});
+
+// 2. Number Input Change
+scaleNumber.addEventListener("input", (e) => {
+    let val = parseFloat(e.target.value);
+    if (isNaN(val)) return;
+
+    if (val < 0.1) val = 0.1;
+    if (val > 5.0) val = 5.0;
+
+    AppState.userScale = val;
+    scaleSlider.value = val;
+    render();
+});
+
+// 3. Blur Input (Fix format)
+scaleNumber.addEventListener("blur", (e) => {
+    let val = parseFloat(e.target.value);
+    if (isNaN(val) || val < 0.1) val = 0.1;
+    if (val > 5.0) val = 5.0;
+    
+    scaleNumber.value = val;
+    scaleSlider.value = val;
+    AppState.userScale = val;
+    render();
+});
+
+
+// --- OTHER CONTROLS ---
+
 document.getElementById("pitch-type").addEventListener("change", (e) => {
     AppState.pitchType = e.target.value;
     resizeCanvas(AppState.pitchType);
     render();
 });
 
-// Add Circle
 document.getElementById("circle-btn").addEventListener("click", () => {
     const color = document.getElementById("circle-color").value;
     const text = document.getElementById("circle-text").value;
     const details = document.getElementById("circle-details-text").value;
     const textColor = document.getElementById("circle-text-color").value || "white";
     
-    // Add to center of canvas
     const newCircle = new Circle(canvas.width/2, canvas.height/2, 20 * responsiveConstant, color, text, textColor, details);
     AppState.circles.push(newCircle);
-    
-    // Reset inputs
     document.getElementById("circle-text").value = "";
     document.getElementById("circle-details-text").value = "";
     updateCounts();
     render();
 });
 
-// Add Text
 document.getElementById("text-btn").addEventListener("click", () => {
     const val = document.getElementById("text-input").value;
-    if(!val) return alert("Please enter text");
+    if(!val) return;
     const fontSize = parseInt(document.getElementById("text-font-size").value) || 20;
-    
     AppState.texts.push(new TextObj(canvas.width/2, canvas.height/2, val, fontSize));
     document.getElementById("text-input").value = "";
     updateCounts();
     render();
 });
 
-// Finish Polygon
 document.getElementById("closePolygon").addEventListener("click", () => {
     if (AppState.drawingPolygonPoints.length > 2) {
         AppState.polygons.push(new Polygon(AppState.drawingPolygonPoints));
         AppState.drawingPolygonPoints = [];
         document.getElementById("draw-polygon-input").checked = false;
-        document.getElementById("draw-arrow-input").disabled = false;
         updateCounts();
         render();
     }
 });
 
-// Delete Button
 document.getElementById("delete-btn").addEventListener("click", () => {
     if (!AppState.selectedObj) return;
-    
-    if (AppState.selectedType === 'circle') {
-        AppState.circles = AppState.circles.filter(o => o !== AppState.selectedObj);
-    } else if (AppState.selectedType === 'arrow') {
-        AppState.arrows = AppState.arrows.filter(o => o !== AppState.selectedObj);
-    } else if (AppState.selectedType === 'text') {
-        AppState.texts = AppState.texts.filter(o => o !== AppState.selectedObj);
-    } else if (AppState.selectedType === 'polygon') {
-        AppState.polygons = AppState.polygons.filter(o => o !== AppState.selectedObj);
-    }
+    if (AppState.selectedType === 'circle') AppState.circles = AppState.circles.filter(o => o !== AppState.selectedObj);
+    else if (AppState.selectedType === 'arrow') AppState.arrows = AppState.arrows.filter(o => o !== AppState.selectedObj);
+    else if (AppState.selectedType === 'text') AppState.texts = AppState.texts.filter(o => o !== AppState.selectedObj);
+    else if (AppState.selectedType === 'polygon') AppState.polygons = AppState.polygons.filter(o => o !== AppState.selectedObj);
     
     AppState.selectedObj = null;
     updateCounts();
     render();
 });
 
-// Reset Button
 document.getElementById("reset-btn").addEventListener("click", () => {
-    if(confirm("Clear current pitch?")) {
-        AppState.circles = [];
-        AppState.arrows = [];
-        AppState.texts = [];
-        AppState.polygons = [];
+    if(confirm("Reset pitch objects?")) {
+        AppState.circles = []; AppState.arrows = []; AppState.texts = []; AppState.polygons = [];
         Storage.clear();
         updateCounts();
         render();
     }
 });
 
-// Export
 document.getElementById("export-btn").addEventListener("click", () => {
-    // Tạm thời dùng lại logic render nhưng trên canvas tạm
-    // Vì code cũ khá dài, bạn có thể tái sử dụng logic export cũ
-    // Hoặc đơn giản là:
     const link = document.createElement('a');
-    link.download = 'tactical-board.jpg';
+    link.download = 'goal-line-tactic.jpg';
     link.href = canvas.toDataURL("image/jpeg", 1.0);
     link.click();
 });
 
-// Checkbox Logic (Arrow vs Polygon exclusive)
-document.getElementById("draw-arrow-input").addEventListener("change", (e) => {
-    document.getElementById("draw-polygon-input").disabled = e.target.checked;
-    if(e.target.checked) AppState.selectedObj = null; // Deselect
-});
-document.getElementById("draw-polygon-input").addEventListener("change", (e) => {
-    document.getElementById("draw-arrow-input").disabled = e.target.checked;
-    if(e.target.checked) AppState.selectedObj = null;
-});
-
-// Rotate Text (Shift + Scroll)
-window.addEventListener("wheel", (e) => {
-    if (e.shiftKey && AppState.selectedObj && AppState.selectedType === 'text') {
-        AppState.selectedObj.rotate += (e.deltaY > 0 ? 5 : -5);
-        render();
-    }
-});
-
-// Helper
+// Update Counters
 function updateCounts() {
     document.querySelector(".circle-count").innerText = AppState.circles.length;
     document.querySelector(".arrow-count").innerText = AppState.arrows.length;
     document.querySelector(".text-count").innerText = AppState.texts.length;
     document.querySelector(".polygon-count").innerText = AppState.polygons.length;
 }
+
+// Checkbox Logic
+document.getElementById("draw-arrow-input").addEventListener("change", (e) => {
+    document.getElementById("draw-polygon-input").disabled = e.target.checked;
+    if(e.target.checked) AppState.selectedObj = null;
+});
+document.getElementById("draw-polygon-input").addEventListener("change", (e) => {
+    document.getElementById("draw-arrow-input").disabled = e.target.checked;
+    if(e.target.checked) AppState.selectedObj = null;
+});
+
+// Text Rotation
+window.addEventListener("wheel", (e) => {
+    if (e.shiftKey && AppState.selectedObj && AppState.selectedType === 'text') {
+        AppState.selectedObj.rotate += (e.deltaY > 0 ? 5 : -5);
+        render();
+    }
+});
 
 // Start App
 init();

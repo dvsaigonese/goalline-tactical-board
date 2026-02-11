@@ -1,15 +1,16 @@
 export class Polygon {
     constructor(points = []) {
-        this.points = points; // Array of objects {x, y}
+        this.points = points; 
     }
 
-    draw(ctx, isSelected = false) {
+    draw(ctx, isSelected = false, userScale = 1.0) {
         if (this.points.length < 1) return;
 
         ctx.save();
         ctx.fillStyle = isSelected ? "rgba(255, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.3)";
         ctx.strokeStyle = "white";
-        ctx.lineWidth = 2;
+        // Scale độ dày nét
+        ctx.lineWidth = 2 * userScale;
 
         ctx.beginPath();
         ctx.moveTo(this.points[0].x, this.points[0].y);
@@ -20,21 +21,21 @@ export class Polygon {
         ctx.fill();
         ctx.stroke();
         
-        // Vẽ các điểm neo (optional, để sau này phát triển tính năng chỉnh sửa zone)
         if (isSelected) {
             ctx.fillStyle = "yellow";
             for (let p of this.points) {
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                // Scale điểm neo
+                ctx.arc(p.x, p.y, 3 * userScale, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
         ctx.restore();
     }
 
+    // Hitbox của Polygon dựa trên tọa độ đỉnh nên không cần nhân userScale vào tọa độ
     isHit(point) {
         let isInside = false;
-        // Thuật toán Ray-Casting (như code cũ của bạn)
         let minX = this.points[0].x, maxX = this.points[0].x;
         let minY = this.points[0].y, maxY = this.points[0].y;
 
