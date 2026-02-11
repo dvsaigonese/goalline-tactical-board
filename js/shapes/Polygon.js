@@ -20,18 +20,22 @@ export class Polygon {
         ctx.fill();
         ctx.stroke();
         
+        // Vẽ các điểm neo (Handles) khi được chọn
         if (isSelected) {
-            ctx.fillStyle = "yellow";
+            ctx.fillStyle = "#facc15"; // Màu vàng sáng cho dễ nhìn
+            ctx.strokeStyle = "black";
             for (let p of this.points) {
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 3 * userScale, 0, Math.PI * 2);
+                // Vẽ to ra một chút để dễ click (radius = 5)
+                ctx.arc(p.x, p.y, 5 * userScale, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.stroke();
             }
         }
         ctx.restore();
     }
 
-    // --- TÍNH NĂNG MỚI: Move cả khối ---
+    // Di chuyển cả khối
     move(dx, dy) {
         for (let i = 0; i < this.points.length; i++) {
             this.points[i].x += dx;
@@ -39,12 +43,26 @@ export class Polygon {
         }
     }
 
-    // --- FIX LỖI: Nhận x, y riêng biệt để đồng bộ với main.js ---
-    isHit(x, y) { 
-        // Logic Ray-Casting (Point in Polygon)
+    // --- LOGIC MỚI: Kiểm tra click trúng đỉnh nào ---
+    // Trả về index của điểm trúng, hoặc -1 nếu không trúng
+    getHitVertexIndex(x, y, userScale = 1.0) {
+        // Bán kính vùng click (Hitbox) nên to hơn hình vẽ một chút cho dễ bấm
+        const hitRadius = 8 * userScale; 
+
+        for (let i = 0; i < this.points.length; i++) {
+            const dx = x - this.points[i].x;
+            const dy = y - this.points[i].y;
+            // Kiểm tra khoảng cách
+            if (dx*dx + dy*dy <= hitRadius*hitRadius) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // Kiểm tra click trúng thân (giữ nguyên)
+    isHit(x, y) {
         let isInside = false;
-        
-        // 1. Check nhanh biên (Bounding Box) để tối ưu
         let minX = this.points[0].x, maxX = this.points[0].x;
         let minY = this.points[0].y, maxY = this.points[0].y;
 
@@ -60,7 +78,6 @@ export class Polygon {
             return false;
         }
 
-        // 2. Thuật toán chính
         let i = 0, j = this.points.length - 1;
         for (i, j; i < this.points.length; j = i++) {
             if (

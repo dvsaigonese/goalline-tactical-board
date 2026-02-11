@@ -22,7 +22,10 @@ const AppState = {
     selectedType: null, // 'circle', 'arrow', 'text', 'polygon'
     isDragging: false,
     dragOffset: { x: 0, y: 0 },
-    lastMousePos: { x: 0, y: 0 }, // tính delta polygon
+
+    // Polygon Dragging Logic
+    lastMousePos: { x: 0, y: 0 }, // Dùng để tính delta di chuyển cả khối polygon
+    polygonDragIndex: -1,         // Index của đỉnh đang được kéo (-1 là không kéo đỉnh nào)
     
     // Drawing Modes
     mode: 'select', // 'select', 'drawArrow', 'drawPolygon'
@@ -39,9 +42,9 @@ const AppState = {
 async function init() {
     await loadImages();
     
-    // 1. Load dữ liệu object từ Storage (nhưng chưa render lên ngay)
+    // 1. Load dữ liệu object từ Storage (Load vào AppState nhưng chưa render ngay)
     const data = Storage.load();
-    const hasObjectData = data.circles.length > 0 || data.arrows.length > 0 || data.texts.length > 0;
+    const hasObjectData = data.circles.length > 0 || data.arrows.length > 0 || data.texts.length > 0 || data.polygons.length > 0;
     
     // 2. Load ảnh nền Custom từ Storage (nếu có)
     const hasCustomBg = await loadCustomBackgroundFromStorage();
@@ -70,38 +73,40 @@ function render() {
     drawPitch(AppState.pitchType);
     const imgs = getImages();
 
-    // Draw Polygons
+    // 1. Draw Polygons (Vẽ vùng trước để nằm dưới)
     AppState.polygons.forEach((p) => {
         const isSelected = (AppState.selectedObj === p);
+        // Lưu ý: Đảm bảo Polygon.js của bạn có hàm draw nhận userScale
         p.draw(ctx, isSelected, AppState.userScale);
     });
-    // Draw drawing polygon
+    // Draw polygon đang vẽ dở
     if (AppState.drawingPolygonPoints.length > 0) {
         new Polygon(AppState.drawingPolygonPoints).draw(ctx, true, AppState.userScale);
     }
 
-    // Draw Arrows
+    // 2. Draw Arrows
     AppState.arrows.forEach((a) => {
         const isSelected = (AppState.selectedObj === a);
         a.draw(ctx, responsiveConstant, isSelected, AppState.userScale);
     });
+    // Draw arrow đang vẽ dở
     if (AppState.drawingArrow) {
         AppState.drawingArrow.draw(ctx, responsiveConstant, true, AppState.userScale);
     }
 
-    // Draw Circles
+    // 3. Draw Circles (Cầu thủ)
     AppState.circles.forEach((c) => {
         const isSelected = (AppState.selectedObj === c);
         c.draw(ctx, imgs.ball, responsiveConstant, isSelected, AppState.userScale);
     });
 
-    // Draw Texts
+    // 4. Draw Texts (Chữ nằm trên cùng)
     AppState.texts.forEach((t) => {
         const isSelected = (AppState.selectedObj === t);
         t.draw(ctx, responsiveConstant, isSelected, AppState.userScale);
     });
     
-    // Save state objects
+    // Save state objects automatically
     Storage.save(AppState.circles, AppState.arrows, AppState.texts, AppState.polygons, AppState.pitchType);
 }
 
@@ -125,18 +130,20 @@ canvas.addEventListener("mousedown", (e) => {
     if (document.getElementById("draw-polygon-input").checked) {
         AppState.mode = 'drawPolygon';
         AppState.drawingPolygonPoints.push({x: pos.x, y: pos.y});
-        render();
+        render(); // Render điểm mới
         return;
     }
 
-    // Mode: Select
+    // Mode: Select (Mặc định)
     AppState.mode = 'select';
     AppState.selectedObj = null;
     AppState.isDragging = false;
+    AppState.polygonDragIndex = -1; // Reset polygon vertex drag
 
-    // Check Hit (Truyền userScale vào để vùng click chính xác)
+    // Check Hit (Thứ tự check ngược với thứ tự vẽ: Text -> Circle -> Arrow -> Polygon)
+    // Để click trúng cái nằm trên cùng trước
     
-    // Text Priority
+    // 1. Check Text
     for (let i = AppState.texts.length - 1; i >= 0; i--) {
         if (AppState.texts[i].isHit(pos.x, pos.y, ctx, responsiveConstant, AppState.userScale)) {
             AppState.selectedObj = AppState.texts[i];
@@ -147,7 +154,7 @@ canvas.addEventListener("mousedown", (e) => {
         }
     }
 
-    // Circle Priority
+    // 2. Check Circle
     for (let i = AppState.circles.length - 1; i >= 0; i--) {
         if (AppState.circles[i].isHit(pos.x, pos.y, AppState.userScale)) {
             AppState.selectedObj = AppState.circles[i];
@@ -158,7 +165,7 @@ canvas.addEventListener("mousedown", (e) => {
         }
     }
 
-    // Arrow Priority
+    // 3. Check Arrow
     for (let i = AppState.arrows.length - 1; i >= 0; i--) {
         const arr = AppState.arrows[i];
         if (arr.isHitHandle(pos.x, pos.y, 'from', responsiveConstant, AppState.userScale)) {
@@ -185,28 +192,44 @@ canvas.addEventListener("mousedown", (e) => {
         }
     }
 
-    //Polygon Priority
+    // 4. Check Polygon
     for (let i = AppState.polygons.length - 1; i >= 0; i--) {
-        // Truyền đúng x, y riêng biệt
-        if (AppState.polygons[i].isHit(pos.x, pos.y)) {
-            AppState.selectedObj = AppState.polygons[i];
+        const poly = AppState.polygons[i];
+
+        // A. Ưu tiên kiểm tra: Có click trúng ĐỈNH (Vertex) không?
+        const vertexIndex = poly.getHitVertexIndex(pos.x, pos.y, AppState.userScale);
+        
+        if (vertexIndex !== -1) {
+            // TRÚNG ĐỈNH -> Chế độ chỉnh sửa hình dáng
+            AppState.selectedObj = poly;
             AppState.selectedType = 'polygon';
             AppState.isDragging = true;
-            
-            // Lưu vị trí chuột hiện tại để tí nữa tính toán di chuyển
-            AppState.lastMousePos = { x: pos.x, y: pos.y }; 
-            
+            AppState.polygonDragIndex = vertexIndex; // Lưu index đỉnh
+            render();
+            return;
+        }
+
+        // B. Nếu không trúng đỉnh, kiểm tra trúng THÂN
+        if (poly.isHit(pos.x, pos.y)) {
+            // TRÚNG THÂN -> Chế độ di chuyển cả khối
+            AppState.selectedObj = poly;
+            AppState.selectedType = 'polygon';
+            AppState.isDragging = true;
+            AppState.lastMousePos = { x: pos.x, y: pos.y }; // Lưu vị trí bắt đầu kéo
+            AppState.polygonDragIndex = -1; // Không kéo đỉnh
             render();
             return;
         }
     }
-
+    
+    // Nếu không click trúng gì -> Deselect
     render();
 });
 
 canvas.addEventListener("mousemove", (e) => {
     const pos = getMousePos(canvas, e);
 
+    // Xử lý vẽ Arrow (kéo thả để tạo)
     if (AppState.mode === 'drawArrow' && AppState.drawingArrow) {
         AppState.drawingArrow.toX = pos.x;
         AppState.drawingArrow.toY = pos.y;
@@ -214,11 +237,17 @@ canvas.addEventListener("mousemove", (e) => {
         return;
     }
 
+    // Xử lý kéo thả Object
     if (AppState.isDragging && AppState.selectedObj) {
+        
+        // --- TEXT & CIRCLE ---
         if (AppState.selectedType === 'circle' || AppState.selectedType === 'text') {
             AppState.selectedObj.x = pos.x - AppState.dragOffset.x;
             AppState.selectedObj.y = pos.y - AppState.dragOffset.y;
-        } else if (AppState.selectedType === 'arrow') {
+        } 
+        
+        // --- ARROW ---
+        else if (AppState.selectedType === 'arrow') {
             const arr = AppState.selectedObj;
             if (AppState.arrowDragPoint === 'from') {
                 arr.fromX = pos.x; arr.fromY = pos.y;
@@ -230,44 +259,54 @@ canvas.addEventListener("mousemove", (e) => {
                 arr.toX = pos.x - AppState.dragOffset.toX;
                 arr.toY = pos.y - AppState.dragOffset.toY;
             }
-        } else if (AppState.selectedType === 'polygon') {
-            // 1. Tính khoảng cách chuột đã di chuyển so với frame trước
-            const dx = pos.x - AppState.lastMousePos.x;
-            const dy = pos.y - AppState.lastMousePos.y;
-            
-            // 2. Cộng khoảng cách đó vào toạ độ của Polygon
-            AppState.selectedObj.move(dx, dy);
-            
-            // 3. Cập nhật lại vị trí chuột cũ thành hiện tại cho lần tính tiếp theo
-            AppState.lastMousePos = { x: pos.x, y: pos.y };
+        } 
+        
+        // --- POLYGON ---
+        else if (AppState.selectedType === 'polygon') {
+            if (AppState.polygonDragIndex !== -1) {
+                // CASE 1: KÉO ĐỈNH -> Sửa hình dáng
+                // Cập nhật tọa độ đỉnh đang kéo theo chuột
+                AppState.selectedObj.points[AppState.polygonDragIndex].x = pos.x;
+                AppState.selectedObj.points[AppState.polygonDragIndex].y = pos.y;
+            } else {
+                // CASE 2: KÉO THÂN -> Di chuyển cả khối
+                const dx = pos.x - AppState.lastMousePos.x;
+                const dy = pos.y - AppState.lastMousePos.y;
+                AppState.selectedObj.move(dx, dy);
+                AppState.lastMousePos = { x: pos.x, y: pos.y }; // Cập nhật vị trí chuột cũ
+            }
         }
         render();
     }
 });
 
 canvas.addEventListener("mouseup", () => {
+    // Kết thúc vẽ Arrow
     if (AppState.mode === 'drawArrow' && AppState.drawingArrow) {
         AppState.arrows.push(AppState.drawingArrow);
         AppState.drawingArrow = null;
-        AppState.mode = 'select';
-        document.getElementById("draw-arrow-input").checked = false;
+        AppState.mode = 'select'; // Quay về mode select
+        document.getElementById("draw-arrow-input").checked = false; // Bỏ check UI
         updateCounts();
     }
+    
+    // Kết thúc kéo thả
     AppState.isDragging = false;
     AppState.arrowDragPoint = null;
+    AppState.polygonDragIndex = -1;
     render();
 });
 
 // 2. UI & Startup Logic
 
-// Nút Home: Quay về màn hình chọn mode
+// Nút Home
 document.getElementById("home-btn").addEventListener("click", () => {
-    const hasData = AppState.circles.length > 0 || AppState.arrows.length > 0 || AppState.texts.length > 0;
+    const hasData = AppState.circles.length > 0 || AppState.arrows.length > 0 || AppState.texts.length > 0 || AppState.polygons.length > 0;
     document.getElementById("continue-section").style.display = hasData ? "block" : "none";
     document.getElementById("startup-modal").style.display = "flex";
 });
 
-// Nút Continue: Load lại session cũ
+// Nút Continue
 document.getElementById("btn-continue").addEventListener("click", () => {
     document.getElementById("startup-modal").style.display = "none";
     
@@ -276,13 +315,14 @@ document.getElementById("btn-continue").addEventListener("click", () => {
          document.getElementById("pitch-type").disabled = true;
     }
     
-    // Re-hydrate objects
+    // Re-hydrate objects từ Storage vào AppState
     const data = Storage.load();
     if(data) {
         AppState.circles = data.circles.map(d => new Circle(d.x, d.y, d.radius, d.color, d.text, d.textColor, d.detailsText));
         AppState.arrows = data.arrows.map(d => new Arrow(d.fromX, d.fromY, d.toX, d.toY, d.color, d.type, d.isArrow));
         AppState.texts = data.texts.map(d => new TextObj(d.x, d.y, d.text, d.fontSize, d.rotate));
-        AppState.polygons = data.polygons.map(d => new Polygon(d));
+        // Lưu ý: Polygon constructor nhận array points
+        AppState.polygons = data.polygons.map(d => new Polygon(d.points || d)); // Fallback cho data cũ nếu có
         AppState.pitchType = data.pitchType || 'horizontal';
     }
 
@@ -298,7 +338,7 @@ document.getElementById("btn-template-mode").addEventListener("click", () => {
     saveCustomBackgroundToStorage(); // Save null -> Xóa
     document.getElementById("pitch-type").disabled = false;
     
-    // Reset workspace option
+    // Reset workspace
     if(confirm("Start fresh workspace?")) {
         AppState.circles = []; AppState.arrows = []; AppState.texts = []; AppState.polygons = [];
         Storage.clear();
@@ -383,7 +423,6 @@ scaleNumber.addEventListener("blur", (e) => {
     render();
 });
 
-
 // --- OTHER CONTROLS ---
 
 document.getElementById("pitch-type").addEventListener("change", (e) => {
@@ -459,7 +498,8 @@ function updateCounts() {
     document.querySelector(".circle-count").innerText = AppState.circles.length;
     document.querySelector(".arrow-count").innerText = AppState.arrows.length;
     document.querySelector(".text-count").innerText = AppState.texts.length;
-    document.querySelector(".polygon-count").innerText = AppState.polygons.length;
+    // Polygon count nếu cần
+    // document.querySelector(".polygon-count").innerText = AppState.polygons.length;
 }
 
 // Checkbox Logic
