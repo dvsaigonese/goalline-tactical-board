@@ -52,11 +52,12 @@ export class Circle {
         }
 
         // Vẽ Số Áo (Font to)
-        let fontSize = 22 * responsiveConstant * userScale;
+        let fontSize = 30 * responsiveConstant * userScale;
         ctx.font = `bold ${fontSize}px ${CONFIG.fonts.number}`;
         ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.fillStyle = this.textColor;
-        ctx.fillText(this.text, this.x, this.y + (6 * responsiveConstant * userScale));
+        ctx.fillText(this.text, this.x, this.y + (responsiveConstant * userScale));
 
         // Vẽ Tên (Font nhỏ)
         if (this.detailsText) {
