@@ -100,11 +100,11 @@ const renderWatermark = () => {
         ctx.save();
         ctx.globalAlpha = 0.06; // Tăng opacity lên 0.06 cho rõ hơn
         ctx.globalCompositeOperation = 'screen'; 
-        const giantSize = width * 0.75; 
+        const giantSize = width * 1.6; 
         ctx.drawImage(
             logoImage, 
-            width - giantSize * 0.65, 
-            height - giantSize * 0.8, 
+            width - giantSize * 0.49, 
+            height - giantSize * 0.55, 
             giantSize, 
             giantSize
         );
@@ -114,7 +114,7 @@ const renderWatermark = () => {
     // 5. Logo nhỏ trái 
     if (logoImage) {
         const smallSize = width * 0.08; 
-        const padding = width * 0.035;
+        const padding = width * 0.03;
         ctx.drawImage(logoImage, padding, padding, smallSize, smallSize);
     }
 
@@ -128,8 +128,18 @@ const renderWatermark = () => {
 
     // 7. Vẽ Title 
     const rawTitle = titleInput.value || "Hãy nhập {title}"; 
-    const titleFontSize = width * 0.04; 
-    const titlePaddingX = width * 0.04; 
+
+    // Tách các dòng dựa vào phím Enter (\n)
+    const lines = rawTitle.split('\n');
+    let titleFontSize = null;
+
+    if (lines.length === 1) {
+        titleFontSize = width * 0.04; 
+    } else {
+        titleFontSize = width * 0.042; 
+    }
+
+    const titlePaddingX = width * 0.025; 
     const bottomMargin = width * 0.06; // Lề dưới cùng
 
     ctx.save();
@@ -137,8 +147,7 @@ const renderWatermark = () => {
     ctx.textBaseline = 'middle';
     ctx.font = `bold ${titleFontSize}px Albula, Arial, sans-serif`;
 
-    // Tách các dòng dựa vào phím Enter (\n)
-    const lines = rawTitle.split('\n');
+    
     const lineHeight = titleFontSize * 1.3; // Khoảng cách giữa các dòng
     
     // Thuật toán: Dòng cuối cùng luôn neo ở bottomMargin. Đẩy các dòng trên lên cao dần.
@@ -146,12 +155,12 @@ const renderWatermark = () => {
 
     // A. Vẽ thanh dọc (Vertical bar) tự động dài ra theo số dòng
 
-    const barWidth = titleFontSize * 0.15; // Bề ngang thanh bar
+    const barWidth = titleFontSize * 0.18; // Bề ngang thanh bar
     let barY, barHeight;
 
     if (lines.length === 1) {
         // TRƯỜNG HỢP 1 DÒNG: Bar dài hơn chữ, chữ nằm chính giữa Bar
-        barHeight = titleFontSize * 1.5; // Dài hơn font size một chút
+        barHeight = titleFontSize * 1.85; // Dài hơn font size một chút
         barY = startY - barHeight / 2;    // Đẩy lên một nửa để căn giữa với chữ
     } else {
         // TRƯỜNG HỢP NHIỀU DÒNG: Đáy bar ngang đáy chữ cuối, đỉnh bar thấp hơn chữ đầu
@@ -161,7 +170,6 @@ const renderWatermark = () => {
         barY = startY - (titleFontSize * 0.1); // Đỉnh bar bắt đầu thấp hơn đỉnh chữ dòng đầu một chút
         barHeight = textBottom - barY;         // Chiều dài kéo từ đỉnh bar đến bằng đáy chữ
     }
-
 
 
     ctx.fillStyle = 'white';
