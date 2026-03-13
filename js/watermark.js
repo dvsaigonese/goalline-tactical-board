@@ -174,29 +174,47 @@ const renderWatermark = () => {
 
     ctx.fillStyle = 'white';
     
-    const currentLetterSpacing = ctx.letterSpacing;
-    ctx.letterSpacing = "-4px";
+    //const currentLetterSpacing = ctx.letterSpacing;
+    //ctx.letterSpacing = "-4px";
     ctx.fillRect(titlePaddingX, barY, barWidth, barHeight);
-    ctx.letterSpacing = currentLetterSpacing; // Bật lại letterSpacing âm cho chữ
+    //ctx.letterSpacing = currentLetterSpacing; // Bật lại letterSpacing âm cho chữ
 
-    // B. Quét và vẽ từng dòng
+    // Tính toán độ dính chữ (khoảng -4px, -5px) và làm tròn số
+    const spacingPx = Math.round(titleFontSize * -0.045); 
+
+    // Hàm "thợ xây": Tự tay cầm từng chữ cái xếp lên hình
+    function drawTextTight(textStr, x, y) {
+        let currX = x;
+        // normalize('NFC'): Gộp dấu Tiếng Việt để không bị vỡ chữ
+        // Array.from: Tách chuỗi thành mảng từng ký tự an toàn
+        const chars = Array.from(textStr.normalize('NFC'));
+        
+        for (let i = 0; i < chars.length; i++) {
+            const char = chars[i];
+            ctx.fillText(char, currX, y); // Đặt chữ xuống
+            // Đo bề ngang chữ vừa đặt, rồi trừ đi spacingPx để ép chữ sau lùi lại
+            currX += ctx.measureText(char).width + spacingPx;
+        }
+        return currX; // Trả về tọa độ X mới để đoạn text màu khác nối vào
+    }
+
+    // Quét và vẽ từng dòng
     lines.forEach((line, index) => {
         let currentX = titlePaddingX + barWidth + (titleFontSize * 0.4); 
-        const currentY = startY + (index * lineHeight); // Tọa độ Y của dòng hiện tại
+        const currentY = startY + (index * lineHeight); 
         
-        // Tách chuỗi theo định dạng {màu vàng}
         const textParts = line.split(/({[^}]+})/g); 
 
         textParts.forEach(part => {
             if (part.startsWith('{') && part.endsWith('}')) {
-                ctx.fillStyle = '#e2f90e'; 
+                ctx.fillStyle = '#e2f90e'; // Màu vàng
                 const text = part.slice(1, -1); 
-                ctx.fillText(text, currentX, currentY);
-                currentX += ctx.measureText(text).width;
+                // Gọi hàm thợ xây vẽ chữ vàng
+                currentX = drawTextTight(text, currentX, currentY); 
             } else if (part.length > 0) {
-                ctx.fillStyle = 'white';
-                ctx.fillText(part, currentX, currentY);
-                currentX += ctx.measureText(part).width;
+                ctx.fillStyle = 'white'; // Màu trắng
+                // Gọi hàm thợ xây vẽ chữ trắng
+                currentX = drawTextTight(part, currentX, currentY);
             }
         });
     });
