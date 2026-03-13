@@ -100,7 +100,7 @@ const renderWatermark = () => {
         ctx.save();
         ctx.globalAlpha = 0.06; // Tăng opacity lên 0.06 cho rõ hơn
         ctx.globalCompositeOperation = 'screen'; 
-        const giantSize = width * 1.6; 
+        const giantSize = width * 1.1; 
         ctx.drawImage(
             logoImage, 
             width - giantSize * 0.49, 
