@@ -340,4 +340,15 @@ exportBtn.addEventListener('click', async () => {
 });
 
 // Start
-loadImages();
+if (document.fonts) {
+    document.fonts.load('bold 16px "Albula"').then(() => {
+        console.log("Font Albula loaded!");
+        loadImages(); // Đợi font tải xong mới bắt đầu tải logo và render
+    }).catch((err) => {
+        console.log("Font load error, fallback running...", err);
+        loadImages(); // Lỡ có lỗi gì thì tool vẫn chạy tiếp chứ không chết
+    });
+} else {
+    // Nếu trình duyệt quá cũ không hỗ trợ document.fonts
+    loadImages();
+}
