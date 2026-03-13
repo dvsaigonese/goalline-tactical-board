@@ -1,6 +1,9 @@
 @font-face {
   font-family: "Albula";
-  src: url("assets/fonts/FZ-ALBULA-BLACK.TTF") format("opentype");
+  /* Đổi đúng tên file .otf và thêm ?v=1 để ép điện thoại tải lại font mới */
+  src: url("assets/fonts/AlbulaProBold.otf?v=1") format("opentype");
+  font-weight: bold;
+  font-style: normal;
 }
 
 @font-face {
