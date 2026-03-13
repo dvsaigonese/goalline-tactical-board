@@ -381,8 +381,19 @@ cropModeLabel.addEventListener('click', (e) => {
 confirmCropBtn.addEventListener('click', applyCropAndContinue);
 cancelCropBtn.addEventListener('click', cancelCrop);
 
+//debouce để bớt lag khi render
+let typingTimer; // Biến lưu trữ đồng hồ đếm ngược
+const doneTypingInterval = 150; // Thời gian chờ (0.15 giây)
+
 titleInput.addEventListener('input', () => {
-    if (processedImage) renderWatermark();
+    clearTimeout(typingTimer); // Xóa đồng hồ cũ nếu user vẫn đang gõ
+    
+    if (processedImage) {
+        // Đặt lại đồng hồ mới
+        typingTimer = setTimeout(() => {
+            renderWatermark(); // Chỉ render khi đã ngừng gõ sau 0.15 giây
+        }, doneTypingInterval);
+    }
 });
 
 // Nút Xuất File (Đã nâng cấp hỗ trợ Share thẳng vào Photos trên iOS)
@@ -426,28 +437,55 @@ exportBtn.addEventListener('click', async () => {
 });
 
 // Cập nhật số % và render lại ảnh ngay lập tức khi kéo thanh trượt
+let sliderTimer; // Đồng hồ riêng cho các thanh trượt
+const sliderInterval = 100; // Chờ 100ms (0.1 giây) là con số hoàn hảo cho thanh trượt
+
+// 1. Thanh trượt Pattern
 patternOpacityInput?.addEventListener('input', (e) => {
+    // 1. Cập nhật con số % NGAY LẬP TỨC để UI không bị sượng
     if (patternValDisplay) {
         patternValDisplay.textContent = Math.round(e.target.value * 100) + '%';
     }
-    if (processedImage) renderWatermark();
-});
-
-grainIntensityInput?.addEventListener('input', (e) => {
-    if (grainValDisplay) {
-        // Đổi từ 0.08 ra 8% để hiển thị cho đẹp
-        grainValDisplay.textContent = Math.round(e.target.value * 100) + '%';
+    
+    // 2. Tạm hoãn Render Canvas
+    clearTimeout(sliderTimer);
+    if (processedImage) {
+        sliderTimer = setTimeout(() => {
+            renderWatermark();
+        }, sliderInterval);
     }
-    // Render lại ảnh ngay lập tức
-    if (processedImage) renderWatermark();
 });
 
+// 2. Thanh trượt Độ sáng (Brightness)
 overallBrightnessInput?.addEventListener('input', (e) => {
+    // 1. Cập nhật con số % NGAY LẬP TỨC
     if (brightnessValDisplay) {
         brightnessValDisplay.textContent = e.target.value + '%';
     }
-    // Render lại ảnh với độ sáng mới
-    if (processedImage) renderWatermark();
+    
+    // 2. Tạm hoãn Render Canvas
+    clearTimeout(sliderTimer);
+    if (processedImage) {
+        sliderTimer = setTimeout(() => {
+            renderWatermark();
+        }, sliderInterval);
+    }
+});
+
+// 3. Thanh trượt Độ nhiễu hạt (Grain)
+grainIntensityInput?.addEventListener('input', (e) => {
+    // 1. Cập nhật con số % NGAY LẬP TỨC
+    if (grainValDisplay) {
+        grainValDisplay.textContent = Math.round(e.target.value * 100) + '%';
+    }
+    
+    // 2. Tạm hoãn Render Canvas
+    clearTimeout(sliderTimer);
+    if (processedImage) {
+        sliderTimer = setTimeout(() => {
+            renderWatermark();
+        }, sliderInterval);
+    }
 });
 
 // Start
