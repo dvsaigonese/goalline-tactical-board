@@ -23,6 +23,19 @@ let logoImage = null;
 let logoTxtImage = null;
 let cropper = null; // Biến lưu instance của Cropper.js
 
+//pattern
+const patternOpacityInput = document.getElementById('pattern-opacity');
+const patternValDisplay = document.getElementById('pattern-val');
+let patternImage = null;
+
+//grain
+const grainIntensityInput = document.getElementById('grain-intensity');
+const grainValDisplay = document.getElementById('grain-val');
+
+//brightness
+const overallBrightnessInput = document.getElementById('overall-brightness');
+const brightnessValDisplay = document.getElementById('brightness-val');
+
 // CẤU HÌNH CỐ ĐỊNH TỈ LỆ VÀ ĐỘ PHÂN GIẢI
 const TARGET_ASPECT_RATIO = 4 / 5; // Tỉ lệ 4:5
 const MIN_WIDTH = 1200; // Chiều rộng HD tối thiểu
@@ -32,7 +45,8 @@ const MIN_HEIGHT = 1500; // Chiều cao HD tối thiểu
 const loadImages = () => {
     const imagesToLoad = [
         { name: 'logoImage', src: 'assets/img/GL_logo.jpg' }, 
-        { name: 'logoTxtImage', src: 'assets/img/GL_text_logo.png' }
+        { name: 'logoTxtImage', src: 'assets/img/GL_text_logo.png' },
+        { name: 'patternImage', src: 'assets/img/pattern.png' }
     ];
 
     let loadedCount = 0;
@@ -45,6 +59,7 @@ const loadImages = () => {
             // Gán ảnh vào đúng biến
             if (imageData.name === 'logoImage') logoImage = img;
             if (imageData.name === 'logoTxtImage') logoTxtImage = img;
+            if (imageData.name === 'patternImage') patternImage = img;
 
             if (loadedCount === imagesToLoad.length && processedImage) renderWatermark();
         };
@@ -80,6 +95,11 @@ const renderWatermark = () => {
     canvas.width = width;
     canvas.height = height;
 
+    // Lấy giá trị độ sáng từ thanh trượt
+    const brightness = overallBrightnessInput ? overallBrightnessInput.value : 100;
+    // Áp dụng bộ lọc độ sáng cho Canvas
+    ctx.filter = `brightness(${brightness}%)`;
+
     canvas.style.display = 'block';
     emptyState.style.display = 'none';
     cropperContainer.style.display = 'none'; 
@@ -94,6 +114,26 @@ const renderWatermark = () => {
     gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');  
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
+
+    //3.1. Vẽ pattern
+    if (patternImage) {
+        ctx.save();
+        
+        // Lấy giá trị Opacity từ thanh trượt
+        const patternOpacity = patternOpacityInput ? parseFloat(patternOpacityInput.value) : 0.5;
+        ctx.globalAlpha = patternOpacity;
+        
+        // Chế độ Blend Mode: 'multiply' giúp pattern hòa quyện làm tối ảnh giống Photoshop
+        // Nếu pattern của bạn là màu trắng sáng, hãy đổi 'multiply' thành 'overlay'
+        ctx.globalCompositeOperation = 'multiply'; 
+
+        // Lặp pattern lấp đầy toàn bộ Canvas
+        const pattern = ctx.createPattern(patternImage, 'repeat');
+        ctx.fillStyle = pattern;
+        ctx.fillRect(0, 0, width, height);
+        
+        ctx.restore();
+    }
 
     // 4. Logo chìm khổng lồ
     if (logoImage) {
@@ -218,7 +258,9 @@ const renderWatermark = () => {
     ctx.restore();
 
     // 8. Grain
-    addFilmGrain(ctx, width, height, 0.08);
+    addFilmGrain(ctx, width, height, 0.08); //Không trượt thì 0.08 mặc định
+    const grainIntensity = grainIntensityInput ? parseFloat(grainIntensityInput.value) : 0.08;
+    addFilmGrain(ctx, width, height, grainIntensity);
 };
 
 // --- QUẢN LÝ WORKFLOW CROP VÀ SCALE ---
@@ -381,6 +423,31 @@ exportBtn.addEventListener('click', async () => {
     link.download = 'Goal-Line_Watermark.jpg';
     link.href = dataUrl;
     link.click();
+});
+
+// Cập nhật số % và render lại ảnh ngay lập tức khi kéo thanh trượt
+patternOpacityInput?.addEventListener('input', (e) => {
+    if (patternValDisplay) {
+        patternValDisplay.textContent = Math.round(e.target.value * 100) + '%';
+    }
+    if (processedImage) renderWatermark();
+});
+
+grainIntensityInput?.addEventListener('input', (e) => {
+    if (grainValDisplay) {
+        // Đổi từ 0.08 ra 8% để hiển thị cho đẹp
+        grainValDisplay.textContent = Math.round(e.target.value * 100) + '%';
+    }
+    // Render lại ảnh ngay lập tức
+    if (processedImage) renderWatermark();
+});
+
+overallBrightnessInput?.addEventListener('input', (e) => {
+    if (brightnessValDisplay) {
+        brightnessValDisplay.textContent = e.target.value + '%';
+    }
+    // Render lại ảnh với độ sáng mới
+    if (processedImage) renderWatermark();
 });
 
 // Start

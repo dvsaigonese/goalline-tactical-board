@@ -88,6 +88,26 @@
                 <div class="setting-group">
                     <label>2. Article Title</label>
                     <textarea id="wm-title" class="form-control" rows="3" placeholder="Enter post title here..."></textarea>
+
+                    
+                    <label>3. Pattern Intensity (Default: 15%)</label>
+                    <div class="row-input" style="align-items: center;">
+                        <input type="range" id="pattern-opacity" min="0" max="1" step="0.05" value="0.15" style="flex: 1; cursor: pointer;">
+                        <span id="pattern-val" style="color: var(--accent); font-weight: bold; width: 40px; text-align: right;">15%</span>
+                    </div>
+
+                    <label>4. Film Grain (Default: 8%)</label>
+                    <div class="row-input" style="align-items: center;">
+                        <input type="range" id="grain-intensity" min="0" max="0.2" step="0.01" value="0.08" style="flex: 1; cursor: pointer;">
+                        <span id="grain-val" style="color: var(--accent); font-weight: bold; width: 50px; text-align: right;">8%</span>
+                    </div>
+
+                    <label>5. Overall Brightness (Default: 100%)</label>
+                    <div class="row-input" style="align-items: center;">
+                        <input type="range" id="overall-brightness" min="0" max="200" step="10" value="100" style="flex: 1; cursor: pointer;">
+                        <span id="brightness-val" style="color: var(--accent); font-weight: bold; width: 50px; text-align: right;">100%</span>
+                    </div>
+
                     <small style="color: gray; font-size: 0.8rem;">Use {text} to color it yellow.</small>
                     <br>
                     <small style="color: gray; font-size: 0.8rem;">If the title line is too long, it will overflow the image; press Enter if you want to start a new line.</small>
