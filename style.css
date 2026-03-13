@@ -28,7 +28,7 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     height: 100vh;
-    overflow: hidden; /* Cấm scroll body */
+    overflow: hidden; /* Cấm scroll body trên Desktop */
 }
 
 /* --- 2. Layout Grid/Flex --- */
@@ -112,7 +112,7 @@ body {
 
 .canvas-wrapper {
     box-shadow: 0 0 50px rgba(0,0,0,0.8);
-    /* Đây là chỗ quan trọng: Canvas sẽ nằm gọn trong wrapper này */
+    position: relative;
 }
 
 .copyright {
@@ -205,23 +205,6 @@ hr {
     margin-top: 8px;
 }
 
-/* Responsive cho màn hình nhỏ */
-@media (max-width: 768px) {
-    .app-container { flex-direction: column; }
-    .toolbar { 
-        width: 100%; 
-        height: 50px; 
-        flex-direction: row; 
-        padding: 0 10px;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-    }
-    .tool-group { flex-direction: row; width: auto; }
-    .logo { display: none; }
-    .settings-panel { display: none; /* Hoặc làm nút toggle để hiện */ }
-}
-
-
 /* --- Startup Modal --- */
 .startup-overlay {
     position: fixed;
@@ -279,7 +262,7 @@ hr {
 .startup-btn.accent:hover { background-color: var(--accent); color: black; }
 .startup-btn.accent:hover small { color: #333; }
 
-/* Ẩn mũi tên tăng giảm mặc định của input number để nhìn gọn hơn */
+/* Ẩn mũi tên tăng giảm mặc định của input number */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 
   -webkit-appearance: none; 
@@ -309,8 +292,6 @@ input[type=number] {
     scrollbar-width: none;  /* Firefox */
 }
 
-
-
 /* =========================================
    LANDING PAGE (HUB) STYLES
 ========================================= */
@@ -320,7 +301,7 @@ input[type=number] {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    overflow: auto; /* Cho phép cuộn nếu màn hình quá nhỏ */
+    overflow: auto; 
     background-image: radial-gradient(#27272a 1px, transparent 1px);
     background-size: 30px 30px;
 }
@@ -383,15 +364,97 @@ input[type=number] {
     pointer-events: none;
 }
 
-/* Đảm bảo canvas wrapper can contain cropper.js container */
-.canvas-wrapper {
-    position: relative;
-    /* ... (giữ nguyên các style cũ) --> */
-}
-
 /* Đảm bảo canvas chính khi hiển thị final image luôn scale đúng */
 #wm-canvas {
     max-width: 100%;
     max-height: 80vh;
-    object-fit: contain; /* Giữ tỉ lệ, bao trọn trong khung hiển thị */
+    object-fit: contain; 
+}
+
+/* =========================================
+   MOBILE RESPONSIVE (Dành cho màn hình nhỏ)
+   Ghi chú: Đã hợp nhất 2 khối @media cũ thành 1 khối duy nhất chuẩn
+========================================= */
+@media screen and (max-width: 768px) {
+    /* 1. MỞ KHÓA CUỘN TRANG (Rất quan trọng) */
+    body {
+        height: auto;
+        overflow-y: auto !important; 
+    }
+
+    .app-container {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: visible;
+    }
+
+    /* 2. TOOLBAR: Ép nằm ngang trên cùng */
+    .toolbar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        padding: 10px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        justify-content: space-between;
+        align-items: center;
+        flex: none; /* Không cho giãn */
+    }
+
+    .toolbar .tool-group {
+        flex-direction: row;
+        gap: 10px;
+        margin-bottom: 0;
+        width: auto;
+    }
+
+    .toolbar .spacer {
+        display: none; /* Ẩn khoảng trống thừa trên mobile */
+    }
+    
+    .logo { 
+        display: none; /* Ẩn logo ở toolbar cho gọn */
+    }
+
+    /* 3. CANVAS AREA: Khu vực ảnh ở giữa */
+    .canvas-area {
+        flex: none !important; /* QUAN TRỌNG: Gỡ bỏ flex giãn full màn hình của Desktop */
+        width: 100%;
+        height: 50vh; /* Chốt cứng chiều cao 50% màn hình cho vùng ảnh */
+        min-height: 350px;
+    }
+
+    #cropper-container, 
+    #wm-canvas {
+        max-height: 45vh !important;
+    }
+
+    #empty-state {
+        padding: 20px;
+    }
+
+    /* 4. SETTINGS PANEL: Trượt xuống dưới cùng */
+    .settings-panel {
+        display: block !important; /* Ép hiển thị, ghi đè lệnh ẩn cũ */
+        flex: none !important; 
+        width: 100%;
+        height: auto;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        padding: 20px 15px;
+        padding-bottom: 50px;
+    }
+
+    /* Tối ưu ô nhập Text cho ngón tay dễ bấm */
+    textarea#wm-title {
+        font-size: 16px; /* Chống iOS tự động zoom khi gõ */
+        padding: 12px;
+    }
+    
+    /* Làm nút bấm to ra trên điện thoại */
+    .row-input button {
+        padding: 15px 10px !important;
+        font-size: 1rem !important;
+    }
 }
