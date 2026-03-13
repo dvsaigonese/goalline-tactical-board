@@ -299,14 +299,43 @@ titleInput.addEventListener('input', () => {
     if (processedImage) renderWatermark();
 });
 
-exportBtn.addEventListener('click', () => {
+// Nút Xuất File (Đã nâng cấp hỗ trợ Share thẳng vào Photos trên iOS)
+exportBtn.addEventListener('click', async () => {
     if (!processedImage) {
         alert("Please upload and crop an image first!");
         return;
     }
+
+    // Lấy ảnh chất lượng cao từ Canvas
+    const dataUrl = canvas.toDataURL("image/jpeg", 1.0);
+
+    // KIỂM TRA: Nếu là thiết bị di động và hỗ trợ Web Share API
+    if (navigator.canShare && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        try {
+            // Chuyển ảnh từ DataURL sang dạng File để Share
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+            const file = new File([blob], 'Goal-Line_Watermark.jpg', { type: 'image/jpeg' });
+
+            // Mở bảng Share mặc định của iPhone/Android
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Goal-Line Image'
+                });
+                return; // Nếu share thành công thì dừng ở đây, không tải file nữa
+            }
+        } catch (error) {
+            console.log("User cancelled share or share failed", error);
+            // Nếu user bấm hủy share thì không làm gì cả
+            return;
+        }
+    }
+
+    // FALLBACK: Dành cho Laptop/PC hoặc trình duyệt không hỗ trợ Share
     const link = document.createElement('a');
     link.download = 'Goal-Line_Watermark.jpg';
-    link.href = canvas.toDataURL("image/jpeg", 1.0); 
+    link.href = dataUrl;
     link.click();
 });
 
