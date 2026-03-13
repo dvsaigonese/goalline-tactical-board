@@ -174,13 +174,10 @@ const renderWatermark = () => {
 
     ctx.fillStyle = 'white';
     
-    //const currentLetterSpacing = ctx.letterSpacing;
-    //ctx.letterSpacing = "-4px";
     ctx.fillRect(titlePaddingX, barY, barWidth, barHeight);
-    //ctx.letterSpacing = currentLetterSpacing; // Bật lại letterSpacing âm cho chữ
 
-    // Tính toán độ dính chữ (khoảng -4px, -5px) và làm tròn số
-    const spacingPx = Math.round(titleFontSize * -0.045); 
+    // Tính toán độ dính chữ (khoảng -4px) và làm tròn số
+    const spacingPx = Math.round(titleFontSize * -0.083); 
 
     // Hàm "thợ xây": Tự tay cầm từng chữ cái xếp lên hình
     function drawTextTight(textStr, x, y) {
