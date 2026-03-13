@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goal-Line Watermark Tool</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="app-container">
+        <nav class="toolbar">
+            <div class="tool-group">
+                <a href="index.html" id="home-btn" class="tool-btn" title="Home">
+                    <i class="fa-solid fa-home"></i>
+                </a>
+                <a href="board.html" id="home-btn" class="tool-btn" title="Tactical Board">
+                    <i class="fa-solid fa-chess-board"></i>
+                </a>
+                <a href="watermark.html" class="tool-btn active" title="Watermark Tool" style="color: white; background: var(--primary);">
+                    <i class="fa-solid fa-stamp"></i>
+                </a>
+
+                <input type="checkbox" id="crop-mode-input" class="tool-checkbox" hidden disabled>
+                <label for="crop-mode-input" id="crop-mode-label" class="tool-btn disabled" title="Crop Image (4:5)">
+                    <i class="fa-solid fa-crop-simple"></i>
+                </label>
+            </div>
+
+            <div class="spacer"></div>
+            
+            <div class="tool-group bottom">
+                <button id="export-wm-btn" class="tool-btn primary" title="Export Image">
+                    <i class="fa-solid fa-download"></i>
+                </button>
+            </div>
+        </nav>
+
+        <main class="canvas-area">
+            <div class="canvas-wrapper" id="wm-wrapper" style="box-shadow: none; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+                
+                <div id="empty-state" style="color: var(--text-muted); text-align: center; border: 2px dashed var(--border); padding: 50px; border-radius: 12px;">
+                    <i class="fa-solid fa-image" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                    <p>Upload an image to start</p>
+                </div>
+                
+                <div id="cropper-container" style="display: none; width: 100%; height: 85vh; justify-content: center; align-items: center;">
+                    <img id="image-to-crop" style="display: block; max-width: 100%; max-height: 100%;">
+                </div>
+
+                <canvas id="wm-canvas" style="display: none; max-width: 100%; max-height: 85vh; object-fit: contain; box-shadow: 0 0 30px rgba(0,0,0,0.8);"></canvas>
+            </div>
+        </main>
+
+        <aside class="settings-panel">
+            <h3>Watermark Settings</h3>
+
+            <div id="crop-controls" class="setting-group" style="display: none; border: 2px solid var(--accent); padding: 15px; border-radius: var(--radius);">
+                <label style="color: var(--accent); font-weight: bold; text-transform: uppercase;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Crop Mode: Fixed 4:5
+                </label>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">
+                    Select the area you want to keep. The image will be automatically scaled to high resolution (min. 1200x1500). Hides WTM elements during cropping.
+                </p>
+                <div class="row-input">
+                    <button id="confirm-crop-btn" class="startup-btn accent" style="padding: 10px; flex: 2; flex-direction: row; font-size: 0.9rem;">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Apply & Continue</span>
+                    </button>
+                    <button id="cancel-crop-btn" class="tool-btn" style="padding: 10px; border: 1px solid var(--border); font-size: 0.9rem;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="wtm-settings-panel">
+                <div class="setting-group">
+                    <label>1. Upload Base Image</label>
+                    <input type="file" id="upload-img" accept="image/*" class="form-control" style="padding: 5px;">
+                </div>
+                
+                <hr>
+
+                <div class="setting-group">
+                    <label>2. Article Title</label>
+                    <textarea id="wm-title" class="form-control" rows="3" placeholder="Enter post title here..."></textarea>
+                    <small style="color: gray; font-size: 0.8rem;">Use {text} to color it yellow.</small>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script type="module" src="js/watermark.js"></script>
+</body>
+</html>
