@@ -130,7 +130,7 @@ const renderWatermark = () => {
     const rawTitle = titleInput.value || "Hãy nhập {title}"; 
     const titleFontSize = width * 0.04; 
     const titlePaddingX = width * 0.04; 
-    const bottomMargin = width * 0.05; // Lề dưới cùng
+    const bottomMargin = width * 0.06; // Lề dưới cùng
 
     ctx.save();
     ctx.textAlign = 'left';
@@ -145,10 +145,31 @@ const renderWatermark = () => {
     const startY = height - bottomMargin - (lines.length - 1) * lineHeight;
 
     // A. Vẽ thanh dọc (Vertical bar) tự động dài ra theo số dòng
-    const barWidth = titleFontSize * 0.15;
-    const barHeight = (lines.length - 1) * lineHeight + titleFontSize * 1.2;
+
+    const barWidth = titleFontSize * 0.15; // Bề ngang thanh bar
+    let barY, barHeight;
+
+    if (lines.length === 1) {
+        // TRƯỜNG HỢP 1 DÒNG: Bar dài hơn chữ, chữ nằm chính giữa Bar
+        barHeight = titleFontSize * 1.5; // Dài hơn font size một chút
+        barY = startY - barHeight / 2;    // Đẩy lên một nửa để căn giữa với chữ
+    } else {
+        // TRƯỜNG HỢP NHIỀU DÒNG: Đáy bar ngang đáy chữ cuối, đỉnh bar thấp hơn chữ đầu
+        const lastLineY = startY + (lines.length - 1) * lineHeight; // Y của dòng chữ cuối
+        const textBottom = lastLineY + (titleFontSize * 0.45);      // Tọa độ đáy của dòng cuối
+
+        barY = startY - (titleFontSize * 0.1); // Đỉnh bar bắt đầu thấp hơn đỉnh chữ dòng đầu một chút
+        barHeight = textBottom - barY;         // Chiều dài kéo từ đỉnh bar đến bằng đáy chữ
+    }
+
+
+
     ctx.fillStyle = 'white';
-    ctx.fillRect(titlePaddingX, startY - titleFontSize * 0.6, barWidth, barHeight);
+    
+    const currentLetterSpacing = ctx.letterSpacing;
+    ctx.letterSpacing = "-4px";
+    ctx.fillRect(titlePaddingX, barY, barWidth, barHeight);
+    ctx.letterSpacing = currentLetterSpacing; // Bật lại letterSpacing âm cho chữ
 
     // B. Quét và vẽ từng dòng
     lines.forEach((line, index) => {
@@ -160,7 +181,7 @@ const renderWatermark = () => {
 
         textParts.forEach(part => {
             if (part.startsWith('{') && part.endsWith('}')) {
-                ctx.fillStyle = '#facc15'; 
+                ctx.fillStyle = '#e2f90e'; 
                 const text = part.slice(1, -1); 
                 ctx.fillText(text, currentX, currentY);
                 currentX += ctx.measureText(text).width;
